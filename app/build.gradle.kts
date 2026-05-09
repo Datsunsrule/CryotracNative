@@ -22,15 +22,6 @@ android {
             "\"${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(java.util.Date())}\"")
     }
 
-    signingConfigs {
-        create("release") {
-            storeFile     = file("C:/Users/superUser/Desktop/cryotrac-keystore")
-            storePassword = "041018"
-            keyAlias      = "cryotrac"
-            keyPassword   = "041018"
-        }
-    }
-
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -39,7 +30,6 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("release")
         }
     }
 
