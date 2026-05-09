@@ -18,8 +18,8 @@ android {
         vectorDrawables { useSupportLibrary = true }
 
         // Expose build metadata to BuildConfig for the version stamp
-        buildConfigField("String", "BUILD_DATE",
-            "\"${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(java.util.Date())}\"")
+        val buildDate = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(java.util.Date())
+        buildConfigField("String", "BUILD_DATE", "\"$buildDate\"")
     }
 
     buildTypes {
