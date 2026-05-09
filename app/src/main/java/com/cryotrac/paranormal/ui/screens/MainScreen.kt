@@ -67,7 +67,7 @@ fun AppHeader(sessionTime: String, onHome: () -> Unit, onRestart: () -> Unit) {
             )
 
             Text(
-                text = "CRYOTRAC",
+                text = "GHOSTRAC",
                 fontFamily    = FontFamily.Monospace,
                 fontSize      = 28.sp,
                 letterSpacing = 7.sp,

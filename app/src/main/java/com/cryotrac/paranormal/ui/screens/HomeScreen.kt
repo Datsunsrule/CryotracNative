@@ -100,7 +100,7 @@ fun HomeScreen(onEnter: () -> Unit) {
 
         // Disclaimer
         Text(
-            text = "CRYOTRAC IS DESIGNED FOR ENTERTAINMENT PURPOSES ONLY.\n" +
+            text = "GHOSTRAC IS DESIGNED FOR ENTERTAINMENT PURPOSES ONLY.\n" +
                    "EMF AND TOUCH SENSORS USE REAL DEVICE HARDWARE DATA.\n" +
                    "WORD ENGINE OUTPUT IS ALGORITHMICALLY GENERATED.",
             fontFamily    = FontFamily.Monospace,

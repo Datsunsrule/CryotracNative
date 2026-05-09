@@ -11,7 +11,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId   = "com.cryotrac.paranormal"
+        applicationId   = "com.ghostrac.paranormal"
         minSdk          = 26
         targetSdk       = 35
         versionCode     = 9

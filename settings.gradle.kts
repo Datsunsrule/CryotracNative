@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "CryotracNative"
+rootProject.name = "GhostracNative"
 include(":app")
