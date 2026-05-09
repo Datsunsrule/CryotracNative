@@ -67,11 +67,22 @@ fun HomeScreen(onEnter: () -> Unit) {
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxSize()
         ) {
+            Text(
+                text = "GHOSTRAC",
+                fontFamily    = FontFamily.Monospace,
+                fontSize      = 36.sp,
+                letterSpacing = 10.sp,
+                color         = CryotracGreen,
+                modifier      = Modifier.alpha(logoAlpha)
+            )
+
+            Spacer(Modifier.height(8.dp))
+
             Image(
                 painter = painterResource(R.drawable.logofinal),
-                contentDescription = "Cryotrac",
+                contentDescription = "Ghostrac",
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.size(280.dp).alpha(logoAlpha)
+                modifier = Modifier.size(240.dp).alpha(logoAlpha)
             )
 
             Spacer(Modifier.height(36.dp))
@@ -100,18 +111,18 @@ fun HomeScreen(onEnter: () -> Unit) {
 
         // Disclaimer
         Text(
-            text = "GHOSTRAC IS DESIGNED FOR ENTERTAINMENT PURPOSES ONLY.\n" +
-                   "EMF AND TOUCH SENSORS USE REAL DEVICE HARDWARE DATA.\n" +
-                   "WORD ENGINE OUTPUT IS ALGORITHMICALLY GENERATED.",
+            text = "FOR ENTERTAINMENT PURPOSES ONLY\n" +
+                   "EMF & TOUCH USE REAL DEVICE SENSORS\n" +
+                   "WORD ENGINE IS ALGORITHMICALLY GENERATED",
             fontFamily    = FontFamily.Monospace,
-            fontSize      = 11.sp,
+            fontSize      = 10.sp,
             color         = CryotracDim,
             textAlign     = TextAlign.Center,
             letterSpacing = 1.sp,
-            lineHeight    = 16.sp,
+            lineHeight    = 17.sp,
             modifier      = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 44.dp, start = 24.dp, end = 24.dp)
+                .padding(bottom = 44.dp, start = 16.dp, end = 16.dp)
         )
 
         // ── Version stamp (bottom-right corner) ──────────────────────────────

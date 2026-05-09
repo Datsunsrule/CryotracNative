@@ -32,6 +32,8 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
     val ch01On: StateFlow<Boolean> = _ch01On
     private val _ch01Signal = MutableStateFlow(0f)
     val ch01Signal: StateFlow<Float> = _ch01Signal
+    private val _ch01Angle = MutableStateFlow(270f)   // degrees; 270 = pointing up
+    val ch01Angle: StateFlow<Float> = _ch01Angle
     private val _touchCount = MutableStateFlow(0)
     val touchCount: StateFlow<Int> = _touchCount
 
@@ -129,8 +131,13 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
     }
 
     // ── CH-01 ─────────────────────────────────────────────────────────────────
-    fun toggleCh01() { _ch01On.value = !_ch01On.value; if (!_ch01On.value) _ch01Signal.value = 0f }
-    fun updateCh01Signal(signal: Float) { if (_ch01On.value) _ch01Signal.value = signal }
+    fun toggleCh01() {
+        _ch01On.value = !_ch01On.value
+        if (!_ch01On.value) { _ch01Signal.value = 0f; _ch01Angle.value = 270f }
+    }
+    fun updateCh01Signal(signal: Float, angle: Float) {
+        if (_ch01On.value) { _ch01Signal.value = signal; _ch01Angle.value = angle }
+    }
     fun incrementTouch() {
         _touchCount.value++
         playSonar()

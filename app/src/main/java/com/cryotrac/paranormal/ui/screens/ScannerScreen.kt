@@ -3,22 +3,19 @@ package com.cryotrac.paranormal.ui.screens
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
@@ -30,264 +27,278 @@ import kotlin.math.*
 
 @Composable
 fun ScannerScreen(vm: CryotracViewModel) {
-    val ch01On      by vm.ch01On.collectAsState()
-    val ch01Signal  by vm.ch01Signal.collectAsState()
-    val touchCount  by vm.touchCount.collectAsState()
-    val emfMag      by vm.emfMag.collectAsState()
-    val emfX        by vm.emfX.collectAsState()
-    val emfY        by vm.emfY.collectAsState()
-    val emfZ        by vm.emfZ.collectAsState()
-    val emfStatus   by vm.emfStatus.collectAsState()
-    val emfOn       by vm.emfOn.collectAsState()
+    val ch01On       by vm.ch01On.collectAsState()
+    val ch01Signal   by vm.ch01Signal.collectAsState()
+    val ch01Angle    by vm.ch01Angle.collectAsState()
+    val touchCount   by vm.touchCount.collectAsState()
+    val emfMag       by vm.emfMag.collectAsState()
+    val emfX         by vm.emfX.collectAsState()
+    val emfY         by vm.emfY.collectAsState()
+    val emfZ         by vm.emfZ.collectAsState()
+    val emfStatus    by vm.emfStatus.collectAsState()
+    val emfOn        by vm.emfOn.collectAsState()
     val emfAnomalies by vm.emfAnomalyCount.collectAsState()
-    val emfLive     by vm.emfLive.collectAsState()
-    val emfBaseline by vm.emfBaseline.collectAsState()
-    val question    by vm.currentQuestion.collectAsState()
+    val emfLive      by vm.emfLive.collectAsState()
+    val emfBaseline  by vm.emfBaseline.collectAsState()
+    val question     by vm.currentQuestion.collectAsState()
 
-    Column(
+    // ── Full-screen touch capture for CH-01 ──────────────────────────────────
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
-            .padding(horizontal = 10.dp)
+            .pointerInput(ch01On) {
+                if (!ch01On) return@pointerInput
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        for (change in event.changes) {
+                            val cx = size.width / 2f
+                            val cy = size.height / 2f
+                            val dx = change.position.x - cx
+                            val dy = change.position.y - cy
+                            val angleDeg = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
+                            val dist     = sqrt(dx * dx + dy * dy)
+                            val maxDist  = sqrt(cx * cx + cy * cy)
+                            val signal   = (dist / maxDist * 100f).coerceIn(0f, 100f)
+                            when {
+                                change.pressed && !change.previousPressed -> {
+                                    vm.incrementTouch()
+                                    vm.updateCh01Signal(signal, angleDeg)
+                                }
+                                change.pressed -> vm.updateCh01Signal(signal, angleDeg)
+                                !change.pressed && change.previousPressed ->
+                                    vm.updateCh01Signal(0f, angleDeg)
+                            }
+                        }
+                    }
+                }
+            }
     ) {
-        Spacer(Modifier.height(2.dp))
-
-        // ── CH-01 Touch Sensor ────────────────────────────────────────────────
-        PanelHeader(ch = "CH-01", title = "TOUCH SENSOR") {
-            ToggleButton(on = ch01On, onClick = { vm.toggleCh01() })
-        }
-
-        Box(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(150.dp)
-                .pointerInput(ch01On) {
-                    if (!ch01On) return@pointerInput
-                    detectTapGestures(onPress = { offset ->
-                        vm.incrementTouch()
-                        val signal = ((offset.x / size.width) * 100f).coerceIn(0f, 100f)
-                        vm.updateCh01Signal(signal)
-                        tryAwaitRelease()
-                        vm.updateCh01Signal(0f)
-                    })
-                }
+                .fillMaxSize()
+                .background(Color.Black)
+                .padding(horizontal = 10.dp)
         ) {
-            Canvas(modifier = Modifier.fillMaxSize()) { drawMeter(signal = ch01Signal) }
-        }
+            Spacer(Modifier.height(2.dp))
 
-        // Signal + status + touch count on one compact row
-        val statusText = when {
-            ch01Signal >= 85 -> "ANOMALY"
-            ch01Signal >= 60 -> "ACTIVE"
-            ch01Signal >= 30 -> "TRACE"
-            ch01On           -> "CLEAR"
-            else             -> "OFFLINE"
-        }
-        val statusColor = when {
-            ch01Signal >= 85 -> CryotracRed
-            ch01Signal >= 60 -> CryotracGreen
-            ch01Signal >= 30 -> CryotracGreen
-            else             -> CryotracDim
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(ch01Signal.toInt().toString().padStart(3, '0'),
-                fontFamily = FontFamily.Monospace, fontSize = 26.sp,
-                color = CryotracGreen, letterSpacing = 2.sp)
-            Text(statusText, fontFamily = FontFamily.Monospace, fontSize = 18.sp,
-                color = statusColor, letterSpacing = 3.sp)
-            Text("TOUCHES: $touchCount", fontFamily = FontFamily.Monospace,
-                fontSize = 13.sp, color = CryotracMid, letterSpacing = 1.sp)
-        }
-
-        HorizontalDivider(color = CryotracDim, modifier = Modifier.padding(vertical = 2.dp))
-
-        // ── CH-02 EMF ─────────────────────────────────────────────────────────
-        PanelHeader(ch = "CH-02", title = "EMF DETECTOR") {
-            Row(verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("ΔEMF: $emfAnomalies", fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp, color = CryotracMid, letterSpacing = 1.sp)
-                ToggleButton(on = emfOn, onClick = { vm.toggleEmf() })
+            // ── CH-01 Touch Sensor ────────────────────────────────────────────
+            PanelHeader(ch = "CH-01", title = "TOUCH SENSOR") {
+                ToggleButton(on = ch01On, onClick = { vm.toggleCh01() })
             }
-        }
 
-        val emfColor = when (emfStatus) {
-            "ANOMALY"  -> CryotracRed
-            "HIGH"     -> CryotracYellow
-            "ELEVATED" -> CryotracCyan
-            else       -> CryotracGreen
-        }
-        EmfBar(mag = emfMag, color = emfColor, modifier = Modifier.fillMaxWidth().height(34.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(emfStatus, fontFamily = FontFamily.Monospace, fontSize = 18.sp,
-                color = emfColor, letterSpacing = 3.sp)
-            Text(if (emfMag > 0) "${"%.1f".format(emfMag)} μT" else "--.- μT",
-                fontFamily = FontFamily.Monospace, fontSize = 20.sp,
-                color = emfColor, letterSpacing = 2.sp)
-        }
-
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-            listOf("X" to emfX, "Y" to emfY, "Z" to emfZ).forEach { (axis, v) ->
-                Text("$axis: ${"%.1f".format(v)}", fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp, color = CryotracMid, letterSpacing = 1.sp)
-            }
-        }
-
-        Button(
-            onClick = { vm.calibrateEmf() },
-            modifier = Modifier.fillMaxWidth().height(36.dp),
-            contentPadding = PaddingValues(0.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Transparent, contentColor = CryotracDim),
-            border = androidx.compose.foundation.BorderStroke(1.dp, CryotracDim)
-        ) {
-            Text("◎  CALIBRATE BASELINE", fontFamily = FontFamily.Monospace,
-                fontSize = 13.sp, letterSpacing = 2.sp)
-        }
-
-        HorizontalDivider(color = CryotracDim, modifier = Modifier.padding(vertical = 2.dp))
-
-        // ── Field Readings ────────────────────────────────────────────────────
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, CryotracDim, RoundedCornerShape(2.dp))
-                .padding(horizontal = 10.dp, vertical = 6.dp)
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("FIELD READINGS", fontFamily = FontFamily.Monospace,
-                    fontSize = 10.sp, color = CryotracDim, letterSpacing = 2.sp)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
-                ) {
-                    ReadingCell(
-                        label = "EMF BASELINE",
-                        value = if (emfBaseline != null) "${"%.1f".format(emfBaseline)} μT" else "---"
-                    )
-                    ReadingCell(
-                        label = "TOUCH EVENTS",
-                        value = touchCount.toString().padStart(3, '0')
-                    )
-                    ReadingCell(
-                        label = "EMF ANOMALIES",
-                        value = emfAnomalies.toString().padStart(3, '0')
-                    )
-                    ReadingCell(
-                        label = "SENSOR",
-                        value = if (emfLive) "LIVE" else "SIM",
-                        valueColor = if (emfLive) CryotracGreen else CryotracDim
-                    )
+            // Circular meter
+            Box(modifier = Modifier.fillMaxWidth().height(150.dp)) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    drawCircularMeter(signal = ch01Signal, angleDeg = ch01Angle)
                 }
             }
+
+            // Signal + status + touch count
+            val statusText = when {
+                ch01Signal >= 85 -> "ANOMALY"
+                ch01Signal >= 60 -> "ACTIVE"
+                ch01Signal >= 30 -> "TRACE"
+                ch01On           -> "CLEAR"
+                else             -> "OFFLINE"
+            }
+            val statusColor = when {
+                ch01Signal >= 85 -> CryotracRed
+                ch01Signal >= 60 -> CryotracGreen
+                ch01Signal >= 30 -> CryotracGreen
+                else             -> CryotracDim
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(ch01Signal.toInt().toString().padStart(3, '0'),
+                    fontFamily = FontFamily.Monospace, fontSize = 26.sp,
+                    color = CryotracGreen, letterSpacing = 2.sp)
+                Text(statusText, fontFamily = FontFamily.Monospace, fontSize = 18.sp,
+                    color = statusColor, letterSpacing = 3.sp)
+                Text("TOUCHES: $touchCount", fontFamily = FontFamily.Monospace,
+                    fontSize = 13.sp, color = CryotracMid, letterSpacing = 1.sp)
+            }
+
+            HorizontalDivider(color = CryotracDim, modifier = Modifier.padding(vertical = 2.dp))
+
+            // ── CH-02 EMF ─────────────────────────────────────────────────────
+            PanelHeader(ch = "CH-02", title = "EMF DETECTOR") {
+                Row(verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("ΔEMF: $emfAnomalies", fontFamily = FontFamily.Monospace,
+                        fontSize = 12.sp, color = CryotracMid, letterSpacing = 1.sp)
+                    ToggleButton(on = emfOn, onClick = { vm.toggleEmf() })
+                }
+            }
+
+            val emfColor = when (emfStatus) {
+                "ANOMALY"  -> CryotracRed
+                "HIGH"     -> CryotracYellow
+                "ELEVATED" -> CryotracCyan
+                else       -> CryotracGreen
+            }
+            EmfBar(mag = emfMag, color = emfColor, modifier = Modifier.fillMaxWidth().height(34.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(emfStatus, fontFamily = FontFamily.Monospace, fontSize = 18.sp,
+                    color = emfColor, letterSpacing = 3.sp)
+                Text(if (emfMag > 0) "${"%.1f".format(emfMag)} μT" else "--.- μT",
+                    fontFamily = FontFamily.Monospace, fontSize = 20.sp,
+                    color = emfColor, letterSpacing = 2.sp)
+            }
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+                listOf("X" to emfX, "Y" to emfY, "Z" to emfZ).forEach { (axis, v) ->
+                    Text("$axis: ${"%.1f".format(v)}", fontFamily = FontFamily.Monospace,
+                        fontSize = 12.sp, color = CryotracMid, letterSpacing = 1.sp)
+                }
+            }
+
+            Button(
+                onClick = { vm.calibrateEmf() },
+                modifier = Modifier.fillMaxWidth().height(36.dp),
+                contentPadding = PaddingValues(0.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent, contentColor = CryotracDim),
+                border = androidx.compose.foundation.BorderStroke(1.dp, CryotracDim)
+            ) {
+                Text("◎  CALIBRATE BASELINE", fontFamily = FontFamily.Monospace,
+                    fontSize = 13.sp, letterSpacing = 2.sp)
+            }
+
+            HorizontalDivider(color = CryotracDim, modifier = Modifier.padding(vertical = 2.dp))
+
+            // ── Field Readings ────────────────────────────────────────────────
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, CryotracDim, RoundedCornerShape(2.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("FIELD READINGS", fontFamily = FontFamily.Monospace,
+                        fontSize = 10.sp, color = CryotracDim, letterSpacing = 2.sp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceAround
+                    ) {
+                        ReadingCell(
+                            label = "EMF BASELINE",
+                            value = if (emfBaseline != null) "${"%.1f".format(emfBaseline)} μT" else "---"
+                        )
+                        ReadingCell(label = "TOUCH EVENTS",
+                            value = touchCount.toString().padStart(3, '0'))
+                        ReadingCell(label = "EMF ANOMALIES",
+                            value = emfAnomalies.toString().padStart(3, '0'))
+                        ReadingCell(
+                            label = "SENSOR",
+                            value = if (emfLive) "LIVE" else "SIM",
+                            valueColor = if (emfLive) CryotracGreen else CryotracDim
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+
+            // ── Questions ─────────────────────────────────────────────────────
+            QuestionsPanel(
+                question = question,
+                onNext   = { vm.showNextQuestion() },
+                onSpeak  = { vm.speakCurrentQuestion() },
+                modifier = Modifier.height(178.dp)
+            )
+
+            Spacer(Modifier.height(2.dp))
         }
-
-        Spacer(Modifier.height(4.dp))
-
-        // ── Questions ─────────────────────────────────────────────────────────
-        QuestionsPanel(
-            question = question,
-            onNext   = { vm.showNextQuestion() },
-            onSpeak  = { vm.speakCurrentQuestion() },
-            modifier = Modifier.height(178.dp)
-        )
-
-        Spacer(Modifier.height(2.dp))
     }
 }
 
-// ── Analog needle drawn with Canvas ──────────────────────────────────────────
-fun DrawScope.drawMeter(signal: Float) {
-    val cx = size.width / 2f
-    val cy = size.height * 0.91f
-    val r  = minOf(size.width * 0.44f, size.height * 0.78f)
+// ── Circular needle meter ─────────────────────────────────────────────────────
+fun DrawScope.drawCircularMeter(signal: Float, angleDeg: Float) {
+    val cx    = size.width / 2f
+    val cy    = size.height / 2f
+    val maxR  = minOf(size.width, size.height) / 2f - 4.dp.toPx()
 
-    val trackBg     = Color(0xFF040D04)
-    val trackColor  = Color(0xFF0C380C)
-    val greenFg     = Color(0xFF39FF14)
-    val yellowFg    = Color(0xFFFFDD00)
-    val redFg       = Color(0xFFFF3300)
-    val dimGreen    = Color(0xFF1A4A1A)
-    val needleColor = Color(0xFF39FF14)
-    val arcSize     = androidx.compose.ui.geometry.Size(r * 2, r * 2)
-    val arcTopLeft  = Offset(cx - r, cy - r)
+    val green  = Color(0xFF39FF14)
+    val yellow = Color(0xFFFFDD00)
+    val red    = Color(0xFFFF3300)
+    val trackBg  = Color(0xFF020D02)
+    val trackDim = Color(0xFF0C380C)
 
-    // Background wedge fill
-    drawArc(color = trackBg, startAngle = 180f, sweepAngle = 180f,
-        useCenter = true, topLeft = arcTopLeft, size = arcSize)
+    // Zone fills: outer → inner so inner overwrites
+    drawCircle(color = Color(0xFF120202), radius = maxR,           center = Offset(cx, cy)) // red zone bg
+    drawCircle(color = Color(0xFF0D0D00), radius = maxR * 0.70f,   center = Offset(cx, cy)) // yellow zone bg
+    drawCircle(color = trackBg,           radius = maxR * 0.40f,   center = Offset(cx, cy)) // green zone bg
 
-    // Arc track ring
-    drawArc(color = trackColor, startAngle = 180f, sweepAngle = 180f,
-        useCenter = false, topLeft = arcTopLeft, size = arcSize,
-        style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Butt))
+    // Zone ring borders
+    drawCircle(color = trackDim.copy(alpha = 0.6f), radius = maxR * 0.40f,
+        center = Offset(cx, cy), style = Stroke(1.dp.toPx()))
+    drawCircle(color = Color(0xFF2A2A00).copy(alpha = 0.5f), radius = maxR * 0.70f,
+        center = Offset(cx, cy), style = Stroke(1.dp.toPx()))
+    drawCircle(color = trackDim, radius = maxR,
+        center = Offset(cx, cy), style = Stroke(1.5.dp.toPx()))
 
-    // Arc foreground — coloured by zone (green 0–60, yellow 60–85, red 85–100)
-    if (signal > 0f) {
-        listOf(Triple(0f, 60f, greenFg), Triple(60f, 85f, yellowFg), Triple(85f, 100f, redFg))
-            .forEach { (from, to, color) ->
-                if (signal > from) {
-                    drawArc(color = color,
-                        startAngle = 180f + from * 1.8f,
-                        sweepAngle = (minOf(signal, to) - from) * 1.8f,
-                        useCenter  = false, topLeft = arcTopLeft, size = arcSize,
-                        style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Butt))
-                }
-            }
-    }
-
-    // Major tick marks — inside the arc, zone-coloured
-    listOf(0f, 25f, 50f, 75f, 100f).forEach { pct ->
-        val rad   = Math.toRadians((180.0 + pct * 1.8))
-        val inner = r - 22.dp.toPx()
-        val outer = r - 5.dp.toPx()
-        val col   = when { pct >= 85f -> redFg; pct >= 60f -> yellowFg; else -> greenFg }
-        drawLine(color = col,
+    // Cardinal ticks (N/E/S/W)
+    for (tickDeg in listOf(0f, 90f, 180f, 270f)) {
+        val rad   = Math.toRadians(tickDeg.toDouble())
+        val inner = maxR - 14.dp.toPx()
+        val outer = maxR - 4.dp.toPx()
+        drawLine(color = green.copy(alpha = 0.45f),
             start = Offset((cx + inner * cos(rad)).toFloat(), (cy + inner * sin(rad)).toFloat()),
             end   = Offset((cx + outer * cos(rad)).toFloat(), (cy + outer * sin(rad)).toFloat()),
-            strokeWidth = 2.5.dp.toPx())
+            strokeWidth = 2.dp.toPx())
     }
-
-    // Minor tick marks — between major ticks
-    listOf(12.5f, 37.5f, 62.5f, 87.5f).forEach { pct ->
-        val rad   = Math.toRadians((180.0 + pct * 1.8))
-        val inner = r - 14.dp.toPx()
-        val outer = r - 5.dp.toPx()
-        drawLine(color = dimGreen,
+    // Diagonal ticks
+    for (tickDeg in listOf(45f, 135f, 225f, 315f)) {
+        val rad   = Math.toRadians(tickDeg.toDouble())
+        val inner = maxR - 9.dp.toPx()
+        val outer = maxR - 4.dp.toPx()
+        drawLine(color = trackDim,
             start = Offset((cx + inner * cos(rad)).toFloat(), (cy + inner * sin(rad)).toFloat()),
             end   = Offset((cx + outer * cos(rad)).toFloat(), (cy + outer * sin(rad)).toFloat()),
             strokeWidth = 1.dp.toPx())
     }
 
-    // Needle
-    val angleRad = Math.toRadians((180.0 + signal * 1.8))
-    val needleLen = r * 0.80f
-    val tailLen   = r * 0.12f
-    val nx = (cx + needleLen * cos(angleRad)).toFloat()
-    val ny = (cy + needleLen * sin(angleRad)).toFloat()
-    val tx = (cx - tailLen  * cos(angleRad)).toFloat()
-    val ty = (cy - tailLen  * sin(angleRad)).toFloat()
+    // Needle (only when active)
+    if (signal > 0f) {
+        val angleRad  = Math.toRadians(angleDeg.toDouble())
+        val needleLen = (signal / 100f) * maxR * 0.82f
+        val nx = (cx + needleLen * cos(angleRad)).toFloat()
+        val ny = (cy + needleLen * sin(angleRad)).toFloat()
 
-    // Glow
-    drawLine(color = needleColor.copy(alpha = 0.18f), start = Offset(tx, ty), end = Offset(nx, ny),
-        strokeWidth = 10.dp.toPx(), cap = StrokeCap.Round)
-    // Needle body
-    drawLine(color = needleColor, start = Offset(tx, ty), end = Offset(nx, ny),
-        strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
+        val needleColor = when {
+            signal >= 85 -> red
+            signal >= 60 -> yellow
+            else         -> green
+        }
+
+        // Glow
+        drawLine(color = needleColor.copy(alpha = 0.14f),
+            start = Offset(cx, cy), end = Offset(nx, ny),
+            strokeWidth = 14.dp.toPx(), cap = StrokeCap.Round)
+        // Body
+        drawLine(color = needleColor,
+            start = Offset(cx, cy), end = Offset(nx, ny),
+            strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
+        // Tip dot
+        drawCircle(color = needleColor, radius = 4.dp.toPx(), center = Offset(nx, ny))
+        // Tip glow
+        drawCircle(color = needleColor.copy(alpha = 0.3f), radius = 8.dp.toPx(), center = Offset(nx, ny))
+    }
 
     // Pivot
-    drawCircle(color = needleColor.copy(alpha = 0.22f), radius = 13.dp.toPx(), center = Offset(cx, cy))
-    drawCircle(color = trackColor,  radius = 10.dp.toPx(), center = Offset(cx, cy))
-    drawCircle(color = needleColor, radius =  5.dp.toPx(), center = Offset(cx, cy))
-    drawCircle(color = Color.Black, radius =  2.dp.toPx(), center = Offset(cx, cy))
+    drawCircle(color = green.copy(alpha = 0.20f), radius = 13.dp.toPx(), center = Offset(cx, cy))
+    drawCircle(color = trackDim,  radius = 10.dp.toPx(), center = Offset(cx, cy))
+    drawCircle(color = green,     radius =  5.dp.toPx(), center = Offset(cx, cy))
+    drawCircle(color = Color.Black, radius = 2.dp.toPx(), center = Offset(cx, cy))
 }
 
 // ── EMF segmented bar ────────────────────────────────────────────────────────
@@ -298,10 +309,10 @@ fun EmfBar(mag: Float, color: Color, modifier: Modifier = Modifier) {
     Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
         repeat(segments) { i ->
             val segColor = when {
-                i == lit - 1        -> color
+                i == lit - 1             -> color
                 i >= lit - 3 && i < lit - 1 -> color.copy(alpha = 0.6f)
-                i < lit             -> color.copy(alpha = 0.3f)
-                else                -> Color(0xFF020F02)
+                i < lit                  -> color.copy(alpha = 0.3f)
+                else                     -> Color(0xFF020F02)
             }
             Box(
                 modifier = Modifier
@@ -333,7 +344,7 @@ fun PanelHeader(ch: String, title: String, trailing: @Composable () -> Unit = {}
     }
 }
 
-// ── Toggle button (reusable ON/OFF) ──────────────────────────────────────────
+// ── Toggle button ─────────────────────────────────────────────────────────────
 @Composable
 fun ToggleButton(on: Boolean, onClick: () -> Unit) {
     Button(
@@ -351,7 +362,7 @@ fun ToggleButton(on: Boolean, onClick: () -> Unit) {
     }
 }
 
-// ── Reading cell (label + value) ─────────────────────────────────────────────
+// ── Reading cell ─────────────────────────────────────────────────────────────
 @Composable
 fun ReadingCell(label: String, value: String, valueColor: Color = CryotracGreen) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
