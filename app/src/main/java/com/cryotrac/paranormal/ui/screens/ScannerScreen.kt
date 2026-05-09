@@ -74,7 +74,7 @@ fun ScannerScreen(vm: CryotracViewModel) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(160.dp)
+                .height(190.dp)
                 .pointerInput(ch01On) {
                     if (!ch01On) return@pointerInput
                     detectTapGestures(onPress = { offset ->
@@ -265,62 +265,86 @@ fun ScannerScreen(vm: CryotracViewModel) {
 // ── Analog needle drawn with Canvas ──────────────────────────────────────────
 fun DrawScope.drawMeter(signal: Float) {
     val cx = size.width / 2f
-    val cy = size.height * 0.9f
-    val r  = size.height * 0.82f
-    val arcColor   = Color(0xFF0A4A0A)
+    val cy = size.height * 0.91f
+    val r  = minOf(size.width * 0.44f, size.height * 0.78f)
+
+    val trackBg     = Color(0xFF040D04)
+    val trackColor  = Color(0xFF0C380C)
+    val greenFg     = Color(0xFF39FF14)
+    val yellowFg    = Color(0xFFFFDD00)
+    val redFg       = Color(0xFFFF3300)
+    val dimGreen    = Color(0xFF1A4A1A)
     val needleColor = Color(0xFF39FF14)
-    val fgColor    = Color(0xFF39FF14)
+    val arcSize     = androidx.compose.ui.geometry.Size(r * 2, r * 2)
+    val arcTopLeft  = Offset(cx - r, cy - r)
 
-    // Arc background (−90° to +90°, i.e. 180°–360° in standard terms)
-    drawArc(
-        color       = arcColor,
-        startAngle  = 180f,
-        sweepAngle  = 180f,
-        useCenter   = false,
-        topLeft     = Offset(cx - r, cy - r),
-        size        = androidx.compose.ui.geometry.Size(r * 2, r * 2),
-        style       = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
-    )
+    // Background wedge fill
+    drawArc(color = trackBg, startAngle = 180f, sweepAngle = 180f,
+        useCenter = true, topLeft = arcTopLeft, size = arcSize)
 
-    // Arc foreground (proportional to signal)
-    if (signal > 0) {
-        drawArc(
-            color       = fgColor,
-            startAngle  = 180f,
-            sweepAngle  = signal * 1.8f,
-            useCenter   = false,
-            topLeft     = Offset(cx - r, cy - r),
-            size        = androidx.compose.ui.geometry.Size(r * 2, r * 2),
-            style       = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
-        )
+    // Arc track ring
+    drawArc(color = trackColor, startAngle = 180f, sweepAngle = 180f,
+        useCenter = false, topLeft = arcTopLeft, size = arcSize,
+        style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Butt))
+
+    // Arc foreground — coloured by zone (green 0–60, yellow 60–85, red 85–100)
+    if (signal > 0f) {
+        listOf(Triple(0f, 60f, greenFg), Triple(60f, 85f, yellowFg), Triple(85f, 100f, redFg))
+            .forEach { (from, to, color) ->
+                if (signal > from) {
+                    drawArc(color = color,
+                        startAngle = 180f + from * 1.8f,
+                        sweepAngle = (minOf(signal, to) - from) * 1.8f,
+                        useCenter  = false, topLeft = arcTopLeft, size = arcSize,
+                        style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Butt))
+                }
+            }
+    }
+
+    // Major tick marks — inside the arc, zone-coloured
+    listOf(0f, 25f, 50f, 75f, 100f).forEach { pct ->
+        val rad   = Math.toRadians((180.0 + pct * 1.8))
+        val inner = r - 22.dp.toPx()
+        val outer = r - 5.dp.toPx()
+        val col   = when { pct >= 85f -> redFg; pct >= 60f -> yellowFg; else -> greenFg }
+        drawLine(color = col,
+            start = Offset((cx + inner * cos(rad)).toFloat(), (cy + inner * sin(rad)).toFloat()),
+            end   = Offset((cx + outer * cos(rad)).toFloat(), (cy + outer * sin(rad)).toFloat()),
+            strokeWidth = 2.5.dp.toPx())
+    }
+
+    // Minor tick marks — between major ticks
+    listOf(12.5f, 37.5f, 62.5f, 87.5f).forEach { pct ->
+        val rad   = Math.toRadians((180.0 + pct * 1.8))
+        val inner = r - 14.dp.toPx()
+        val outer = r - 5.dp.toPx()
+        drawLine(color = dimGreen,
+            start = Offset((cx + inner * cos(rad)).toFloat(), (cy + inner * sin(rad)).toFloat()),
+            end   = Offset((cx + outer * cos(rad)).toFloat(), (cy + outer * sin(rad)).toFloat()),
+            strokeWidth = 1.dp.toPx())
     }
 
     // Needle
-    val angleDeg = 180f + signal * 1.8f
-    val angleRad = Math.toRadians(angleDeg.toDouble())
-    val needleLen = r * 0.85f
+    val angleRad = Math.toRadians((180.0 + signal * 1.8))
+    val needleLen = r * 0.80f
+    val tailLen   = r * 0.12f
     val nx = (cx + needleLen * cos(angleRad)).toFloat()
     val ny = (cy + needleLen * sin(angleRad)).toFloat()
-    drawLine(color = needleColor, start = Offset(cx, cy), end = Offset(nx, ny),
-        strokeWidth = 3.dp.toPx(), cap = StrokeCap.Round)
+    val tx = (cx - tailLen  * cos(angleRad)).toFloat()
+    val ty = (cy - tailLen  * sin(angleRad)).toFloat()
+
+    // Glow
+    drawLine(color = needleColor.copy(alpha = 0.18f), start = Offset(tx, ty), end = Offset(nx, ny),
+        strokeWidth = 10.dp.toPx(), cap = StrokeCap.Round)
+    // Needle body
+    drawLine(color = needleColor, start = Offset(tx, ty), end = Offset(nx, ny),
+        strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
 
     // Pivot
-    drawCircle(color = needleColor, radius = 7.dp.toPx(), center = Offset(cx, cy))
-    drawCircle(color = Color.Black,  radius = 3.dp.toPx(), center = Offset(cx, cy))
-
-    // Tick marks
-    listOf(0f, 25f, 50f, 75f, 100f).forEach { pct ->
-        val tickDeg = 180f + pct * 1.8f
-        val tickRad = Math.toRadians(tickDeg.toDouble())
-        val inner = r - 12.dp.toPx()
-        val outer = r + 12.dp.toPx()
-        drawLine(
-            color = Color(0xFF20C020),
-            start = Offset((cx + inner * cos(tickRad)).toFloat(), (cy + inner * sin(tickRad)).toFloat()),
-            end   = Offset((cx + outer * cos(tickRad)).toFloat(), (cy + outer * sin(tickRad)).toFloat()),
-            strokeWidth = 2.dp.toPx()
-        )
-    }
+    drawCircle(color = needleColor.copy(alpha = 0.22f), radius = 13.dp.toPx(), center = Offset(cx, cy))
+    drawCircle(color = trackColor,  radius = 10.dp.toPx(), center = Offset(cx, cy))
+    drawCircle(color = needleColor, radius =  5.dp.toPx(), center = Offset(cx, cy))
+    drawCircle(color = Color.Black, radius =  2.dp.toPx(), center = Offset(cx, cy))
 }
 
 // ── EMF segmented bar ────────────────────────────────────────────────────────
