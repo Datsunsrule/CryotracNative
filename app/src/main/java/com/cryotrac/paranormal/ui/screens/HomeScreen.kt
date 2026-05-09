@@ -66,8 +66,8 @@ fun HomeScreen(onEnter: () -> Unit) {
         Image(
             painter = painterResource(R.drawable.logofinal),
             contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize().alpha(0.07f)
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().alpha(0.04f)
         )
 
         Column(

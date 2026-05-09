@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -38,6 +39,7 @@ fun ScannerScreen(vm: CryotracViewModel) {
     val emfY        by vm.emfY.collectAsState()
     val emfZ        by vm.emfZ.collectAsState()
     val emfStatus   by vm.emfStatus.collectAsState()
+    val emfOn       by vm.emfOn.collectAsState()
     val emfAnomalies by vm.emfAnomalyCount.collectAsState()
     val emfLive     by vm.emfLive.collectAsState()
     val question    by vm.currentQuestion.collectAsState()
@@ -55,7 +57,8 @@ fun ScannerScreen(vm: CryotracViewModel) {
         PanelHeader(ch = "CH-01", title = "SCREEN TOUCH SENSOR") {
             Button(
                 onClick = { vm.toggleCh01() },
-                modifier = Modifier.height(36.dp),
+                modifier = Modifier.height(36.dp).widthIn(min = 72.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (ch01On) CryotracGreen.copy(alpha = 0.15f) else Color.Transparent,
                     contentColor   = if (ch01On) CryotracGreen else CryotracDim
@@ -64,7 +67,7 @@ fun ScannerScreen(vm: CryotracViewModel) {
                     2.dp, if (ch01On) CryotracGreen else CryotracDim
                 )
             ) {
-                Text(if (ch01On) "OFF" else "ON", fontFamily = FontFamily.Monospace, fontSize = 16.sp)
+                Text(if (ch01On) "OFF" else "ON", fontFamily = FontFamily.Monospace, fontSize = 16.sp, letterSpacing = 2.sp)
             }
         }
 
@@ -140,11 +143,27 @@ fun ScannerScreen(vm: CryotracViewModel) {
 
         // ── CH-02 EMF ─────────────────────────────────────────────────────────
         PanelHeader(ch = "CH-02", title = "EMF DETECTOR") {
-            Text(
-                text = "ΔEMF: $emfAnomalies",
-                fontFamily = FontFamily.Monospace, fontSize = 13.sp,
-                color = CryotracMid, letterSpacing = 2.sp
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "ΔEMF: $emfAnomalies",
+                    fontFamily = FontFamily.Monospace, fontSize = 13.sp,
+                    color = CryotracMid, letterSpacing = 2.sp
+                )
+                Button(
+                    onClick = { vm.toggleEmf() },
+                    modifier = Modifier.height(36.dp).widthIn(min = 72.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (emfOn) CryotracGreen.copy(alpha = 0.15f) else Color.Transparent,
+                        contentColor   = if (emfOn) CryotracGreen else CryotracDim
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(
+                        2.dp, if (emfOn) CryotracGreen else CryotracDim
+                    )
+                ) {
+                    Text(if (emfOn) "OFF" else "ON", fontFamily = FontFamily.Monospace, fontSize = 16.sp, letterSpacing = 2.sp)
+                }
+            }
         }
 
         // EMF bar

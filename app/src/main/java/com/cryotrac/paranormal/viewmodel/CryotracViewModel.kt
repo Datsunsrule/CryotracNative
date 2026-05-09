@@ -34,6 +34,8 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
     val touchCount: StateFlow<Int> = _touchCount
 
     // ── CH-02 EMF ─────────────────────────────────────────────────────────────
+    private val _emfOn = MutableStateFlow(false)
+    val emfOn: StateFlow<Boolean> = _emfOn
     private val _emfMag = MutableStateFlow(0f)
     val emfMag: StateFlow<Float> = _emfMag
     private val _emfX = MutableStateFlow(0f); val emfX: StateFlow<Float> = _emfX
@@ -41,7 +43,7 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
     private val _emfZ = MutableStateFlow(0f); val emfZ: StateFlow<Float> = _emfZ
     private val _emfBaseline = MutableStateFlow<Float?>(null)
     val emfBaseline: StateFlow<Float?> = _emfBaseline
-    private val _emfStatus = MutableStateFlow("CALIBRATING")
+    private val _emfStatus = MutableStateFlow("OFFLINE")
     val emfStatus: StateFlow<String> = _emfStatus
     private val _emfAnomalyCount = MutableStateFlow(0)
     val emfAnomalyCount: StateFlow<Int> = _emfAnomalyCount
@@ -113,17 +115,34 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
     fun incrementTouch() { _touchCount.value++ }
 
     // ── EMF Sensor ────────────────────────────────────────────────────────────
+    fun toggleEmf() {
+        if (_emfOn.value) {
+            _emfOn.value = false
+            _emfStatus.value = "OFFLINE"
+            _emfMag.value = 0f
+            _emfX.value = 0f; _emfY.value = 0f; _emfZ.value = 0f
+            emfSimJob?.cancel()
+            sensorManager.unregisterListener(this)
+        } else {
+            _emfOn.value = true
+            initSensor()
+        }
+    }
+
     private fun initSensor() {
         if (magnetometer != null) {
             sensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_NORMAL)
             _emfLive.value = true
+            _emfStatus.value = "CALIBRATING"
         } else {
             _emfLive.value = false
+            _emfStatus.value = "CALIBRATING"
             startEmfSimulation()
         }
     }
 
     override fun onSensorChanged(event: SensorEvent) {
+        if (!_emfOn.value) return
         if (event.sensor.type != Sensor.TYPE_MAGNETIC_FIELD) return
         val x = event.values[0]; val y = event.values[1]; val z = event.values[2]
         val mag = sqrt(x * x + y * y + z * z)
