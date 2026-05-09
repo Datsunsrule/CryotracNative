@@ -62,14 +62,6 @@ fun HomeScreen(onEnter: () -> Unit) {
         modifier = Modifier.fillMaxSize().background(Color.Black),
         contentAlignment = Alignment.Center
     ) {
-        // Background watermark logo
-        Image(
-            painter = painterResource(R.drawable.logofinal),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize().alpha(0.04f)
-        )
-
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
