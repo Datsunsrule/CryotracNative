@@ -74,7 +74,7 @@ fun ScannerScreen(vm: CryotracViewModel) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(190.dp)
+                .height(165.dp)
                 .pointerInput(ch01On) {
                     if (!ch01On) return@pointerInput
                     detectTapGestures(onPress = { offset ->

@@ -163,7 +163,10 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
 
     fun calibrateEmf() {
         val m = _emfMag.value
-        if (m > 0) { _emfBaseline.value = m; emfBaselineReads.clear() }
+        val baseline = if (m > 0f) m else emfSimMag
+        _emfBaseline.value = baseline
+        emfBaselineReads.clear()
+        updateEmfStatus(if (m > 0f) m else emfSimMag)
     }
 
     private fun updateEmfStatus(mag: Float) {
@@ -188,6 +191,10 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun startEmfSimulation() {
+        // Seed initial values immediately so calibrate works on first tap
+        val sx = emfSimMag * 0.55f; val sy = emfSimMag * 0.60f; val sz = emfSimMag * 0.45f
+        val sm = sqrt(sx * sx + sy * sy + sz * sz)
+        _emfX.value = sx; _emfY.value = sy; _emfZ.value = sz; _emfMag.value = sm
         emfSimJob = viewModelScope.launch {
             while (true) {
                 delay(500)
