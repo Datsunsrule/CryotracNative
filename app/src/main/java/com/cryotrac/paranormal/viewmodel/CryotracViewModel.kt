@@ -65,6 +65,8 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
     val ghostecProgress: StateFlow<Float> = _ghostecProgress
     private val _ghostecCounter = MutableStateFlow("0000/5000")
     val ghostecCounter: StateFlow<String> = _ghostecCounter
+    private val _recentWords = MutableStateFlow<List<String>>(emptyList())
+    val recentWords: StateFlow<List<String>> = _recentWords
     private var ghostecJob: Job? = null
 
     // ── Questions ─────────────────────────────────────────────────────────────
@@ -242,12 +244,15 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
     private fun startGhostec() {
         val bank = buildWordBank()
         _ghostecRunning.value = true
+        _recentWords.value = emptyList()
         ghostecJob = viewModelScope.launch {
             bank.forEachIndexed { i, word ->
                 if (!isActive) return@forEachIndexed
-                _ghostecWord.value    = word.uppercase()
+                val upper = word.uppercase()
+                _ghostecWord.value    = upper
                 _ghostecCounter.value = "${(i + 1).toString().padStart(4, '0')}/5000"
                 _ghostecProgress.value = (i + 1) / 5000f
+                _recentWords.value = (_recentWords.value + upper).takeLast(5)
                 speakText(word, rate = 1.1f)
                 delay(150)
             }
