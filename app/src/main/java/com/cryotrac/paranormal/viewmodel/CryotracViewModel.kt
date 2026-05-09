@@ -6,6 +6,8 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.media.AudioAttributes
+import android.media.SoundPool
 import android.speech.tts.TextToSpeech
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -75,6 +77,19 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
     private var tts: TextToSpeech? = null
     private var ttsReady = false
 
+    // ── SoundPool (sonar touch effect) ────────────────────────────────────────
+    private val soundPool = SoundPool.Builder()
+        .setMaxStreams(1)
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+        ).build()
+    private var sonarSoundId  = 0
+    private var sonarStreamId = 0
+    private var sonarLoaded   = false
+
     // ── Sensor ────────────────────────────────────────────────────────────────
     private val sensorManager =
         application.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -85,6 +100,8 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
         initTts(application)
         initSensor()
         showNextQuestion()
+        sonarSoundId = soundPool.load(application, com.cryotrac.paranormal.R.raw.sonar, 1)
+        soundPool.setOnLoadCompleteListener { _, _, _ -> sonarLoaded = true }
     }
 
     // ── Timer ─────────────────────────────────────────────────────────────────
@@ -112,7 +129,16 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
     // ── CH-01 ─────────────────────────────────────────────────────────────────
     fun toggleCh01() { _ch01On.value = !_ch01On.value; if (!_ch01On.value) _ch01Signal.value = 0f }
     fun updateCh01Signal(signal: Float) { if (_ch01On.value) _ch01Signal.value = signal }
-    fun incrementTouch() { _touchCount.value++ }
+    fun incrementTouch() {
+        _touchCount.value++
+        playSonar()
+    }
+
+    private fun playSonar() {
+        if (!sonarLoaded) return
+        if (sonarStreamId != 0) soundPool.stop(sonarStreamId)
+        sonarStreamId = soundPool.play(sonarSoundId, 1f, 1f, 1, 0, 1f)
+    }
 
     // ── EMF Sensor ────────────────────────────────────────────────────────────
     fun toggleEmf() {
@@ -267,5 +293,6 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
         emfSimJob?.cancel()
         ghostecJob?.cancel()
         tts?.shutdown()
+        soundPool.release()
     }
 }
