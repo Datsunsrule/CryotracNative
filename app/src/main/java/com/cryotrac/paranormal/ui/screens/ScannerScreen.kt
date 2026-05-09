@@ -47,34 +47,19 @@ fun ScannerScreen(vm: CryotracViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .verticalScroll(rememberScrollState())
             .padding(horizontal = 10.dp)
     ) {
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(2.dp))
 
         // ── CH-01 Touch Sensor ────────────────────────────────────────────────
         PanelHeader(ch = "CH-01", title = "TOUCH SENSOR") {
-            Button(
-                onClick = { vm.toggleCh01() },
-                modifier = Modifier.height(36.dp).widthIn(min = 72.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (ch01On) CryotracGreen.copy(alpha = 0.15f) else Color.Transparent,
-                    contentColor   = if (ch01On) CryotracGreen else CryotracDim
-                ),
-                border = androidx.compose.foundation.BorderStroke(
-                    2.dp, if (ch01On) CryotracGreen else CryotracDim
-                )
-            ) {
-                Text(if (ch01On) "OFF" else "ON", fontFamily = FontFamily.Monospace, fontSize = 16.sp, letterSpacing = 2.sp)
-            }
+            ToggleButton(on = ch01On, onClick = { vm.toggleCh01() })
         }
 
-        // Analog needle (Canvas)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(165.dp)
+                .height(150.dp)
                 .pointerInput(ch01On) {
                     if (!ch01On) return@pointerInput
                     detectTapGestures(onPress = { offset ->
@@ -86,179 +71,107 @@ fun ScannerScreen(vm: CryotracViewModel) {
                     })
                 }
         ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawMeter(signal = ch01Signal)
-            }
+            Canvas(modifier = Modifier.fillMaxSize()) { drawMeter(signal = ch01Signal) }
         }
 
-        // Status row
+        // Signal + status + touch count on one compact row
+        val statusText = when {
+            ch01Signal >= 85 -> "ANOMALY"
+            ch01Signal >= 60 -> "ACTIVE"
+            ch01Signal >= 30 -> "TRACE"
+            ch01On           -> "CLEAR"
+            else             -> "OFFLINE"
+        }
+        val statusColor = when {
+            ch01Signal >= 85 -> CryotracRed
+            ch01Signal >= 60 -> CryotracGreen
+            ch01Signal >= 30 -> CryotracGreen
+            else             -> CryotracDim
+        }
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = ch01Signal.toInt().toString().padStart(3, '0'),
-                fontFamily = FontFamily.Monospace, fontSize = 32.sp,
-                color = CryotracGreen, letterSpacing = 2.sp
-            )
-            val statusText = when {
-                ch01Signal >= 85 -> "ANOMALY"
-                ch01Signal >= 60 -> "ACTIVE"
-                ch01Signal >= 30 -> "TRACE"
-                ch01On           -> "CLEAR"
-                else             -> "OFFLINE"
-            }
-            val statusColor = when {
-                ch01Signal >= 85 -> CryotracRed
-                ch01Signal >= 60 -> CryotracGreen
-                ch01Signal >= 30 -> CryotracGreen
-                else             -> CryotracDim
-            }
-            Text(
-                text = statusText,
-                fontFamily = FontFamily.Monospace, fontSize = 18.sp,
-                color = statusColor, letterSpacing = 3.sp
-            )
+            Text(ch01Signal.toInt().toString().padStart(3, '0'),
+                fontFamily = FontFamily.Monospace, fontSize = 26.sp,
+                color = CryotracGreen, letterSpacing = 2.sp)
+            Text(statusText, fontFamily = FontFamily.Monospace, fontSize = 18.sp,
+                color = statusColor, letterSpacing = 3.sp)
+            Text("TOUCHES: $touchCount", fontFamily = FontFamily.Monospace,
+                fontSize = 13.sp, color = CryotracMid, letterSpacing = 1.sp)
         }
 
-        // Touch count
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, CryotracDim, RoundedCornerShape(2.dp))
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("TOUCHES THIS SESSION", fontFamily = FontFamily.Monospace,
-                fontSize = 12.sp, color = CryotracMid, letterSpacing = 2.sp,
-                modifier = Modifier.weight(1f))
-            Text(touchCount.toString(), fontFamily = FontFamily.Monospace,
-                fontSize = 22.sp, color = CryotracGreen)
-        }
-
-        Spacer(Modifier.height(4.dp))
-        HorizontalDivider(color = CryotracDim)
-        Spacer(Modifier.height(4.dp))
+        HorizontalDivider(color = CryotracDim, modifier = Modifier.padding(vertical = 2.dp))
 
         // ── CH-02 EMF ─────────────────────────────────────────────────────────
         PanelHeader(ch = "CH-02", title = "EMF DETECTOR") {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "ΔEMF: $emfAnomalies",
-                    fontFamily = FontFamily.Monospace, fontSize = 13.sp,
-                    color = CryotracMid, letterSpacing = 2.sp
-                )
-                Button(
-                    onClick = { vm.toggleEmf() },
-                    modifier = Modifier.height(36.dp).widthIn(min = 72.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (emfOn) CryotracGreen.copy(alpha = 0.15f) else Color.Transparent,
-                        contentColor   = if (emfOn) CryotracGreen else CryotracDim
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(
-                        2.dp, if (emfOn) CryotracGreen else CryotracDim
-                    )
-                ) {
-                    Text(if (emfOn) "OFF" else "ON", fontFamily = FontFamily.Monospace, fontSize = 16.sp, letterSpacing = 2.sp)
-                }
+            Row(verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("ΔEMF: $emfAnomalies", fontFamily = FontFamily.Monospace,
+                    fontSize = 12.sp, color = CryotracMid, letterSpacing = 1.sp)
+                ToggleButton(on = emfOn, onClick = { vm.toggleEmf() })
             }
         }
 
-        // EMF bar
         val emfColor = when (emfStatus) {
             "ANOMALY"  -> CryotracRed
             "HIGH"     -> CryotracYellow
             "ELEVATED" -> CryotracCyan
             else       -> CryotracGreen
         }
-        EmfBar(mag = emfMag, color = emfColor, modifier = Modifier.fillMaxWidth().height(48.dp))
+        EmfBar(mag = emfMag, color = emfColor, modifier = Modifier.fillMaxWidth().height(34.dp))
 
         Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = emfStatus,
-                fontFamily = FontFamily.Monospace, fontSize = 18.sp,
-                color = emfColor, letterSpacing = 3.sp
-            )
-            Text(
-                text = if (emfMag > 0) "${"%.1f".format(emfMag)} μT" else "--.- μT",
-                fontFamily = FontFamily.Monospace, fontSize = 22.sp,
-                color = emfColor, letterSpacing = 2.sp
-            )
+            Text(emfStatus, fontFamily = FontFamily.Monospace, fontSize = 18.sp,
+                color = emfColor, letterSpacing = 3.sp)
+            Text(if (emfMag > 0) "${"%.1f".format(emfMag)} μT" else "--.- μT",
+                fontFamily = FontFamily.Monospace, fontSize = 20.sp,
+                color = emfColor, letterSpacing = 2.sp)
         }
 
-        // X Y Z axis readout
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround
-        ) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
             listOf("X" to emfX, "Y" to emfY, "Z" to emfZ).forEach { (axis, v) ->
-                Text(
-                    text = "$axis: ${"%.1f".format(v)}",
-                    fontFamily = FontFamily.Monospace, fontSize = 14.sp,
-                    color = CryotracMid, letterSpacing = 2.sp
-                )
+                Text("$axis: ${"%.1f".format(v)}", fontFamily = FontFamily.Monospace,
+                    fontSize = 12.sp, color = CryotracMid, letterSpacing = 1.sp)
             }
         }
 
-        // Calibrate button
         Button(
             onClick = { vm.calibrateEmf() },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            modifier = Modifier.fillMaxWidth().height(36.dp),
+            contentPadding = PaddingValues(0.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Transparent, contentColor = CryotracDim
-            ),
+                containerColor = Color.Transparent, contentColor = CryotracDim),
             border = androidx.compose.foundation.BorderStroke(1.dp, CryotracDim)
         ) {
             Text("◎  CALIBRATE BASELINE", fontFamily = FontFamily.Monospace,
-                fontSize = 14.sp, letterSpacing = 2.sp)
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, CryotracDim, RoundedCornerShape(2.dp))
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("EMF ANOMALIES", fontFamily = FontFamily.Monospace,
-                fontSize = 12.sp, color = CryotracMid, letterSpacing = 2.sp,
-                modifier = Modifier.weight(1f))
-            Text(emfAnomalies.toString(), fontFamily = FontFamily.Monospace,
-                fontSize = 22.sp, color = CryotracGreen)
+                fontSize = 13.sp, letterSpacing = 2.sp)
         }
 
         Text(
-            text = if (emfLive) "● LIVE MAGNETOMETER — REAL EMF DATA"
-                   else "⚠ MAGNETOMETER UNAVAILABLE — SIMULATED DATA",
-            fontFamily = FontFamily.Monospace, fontSize = 11.sp,
+            text = if (emfLive) "● LIVE" else "⚠ SIMULATED",
+            fontFamily = FontFamily.Monospace, fontSize = 10.sp,
             color = if (emfLive) CryotracMid else CryotracDim,
             letterSpacing = 1.sp, textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+            modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp)
         )
 
-        Spacer(Modifier.height(4.dp))
-        HorizontalDivider(color = CryotracDim)
-        Spacer(Modifier.height(4.dp))
+        HorizontalDivider(color = CryotracDim, modifier = Modifier.padding(vertical = 2.dp))
 
-        // ── Questions ─────────────────────────────────────────────────────────
+        // ── Questions — fills all remaining space ─────────────────────────────
         QuestionsPanel(
             question = question,
             onNext   = { vm.showNextQuestion() },
-            onSpeak  = { vm.speakCurrentQuestion() }
+            onSpeak  = { vm.speakCurrentQuestion() },
+            modifier = Modifier.weight(1f)
         )
 
-        Text(
-            text = "FOR ENTERTAINMENT PURPOSES ONLY",
-            fontFamily = FontFamily.Monospace, fontSize = 11.sp,
-            color = CryotracDim, letterSpacing = 2.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-        )
+        Spacer(Modifier.height(2.dp))
     }
 }
 
@@ -390,38 +303,65 @@ fun PanelHeader(ch: String, title: String, trailing: @Composable () -> Unit = {}
     }
 }
 
+// ── Toggle button (reusable ON/OFF) ──────────────────────────────────────────
+@Composable
+fun ToggleButton(on: Boolean, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.height(36.dp).widthIn(min = 72.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (on) CryotracGreen.copy(alpha = 0.15f) else Color.Transparent,
+            contentColor   = if (on) CryotracGreen else CryotracDim
+        ),
+        border = androidx.compose.foundation.BorderStroke(2.dp, if (on) CryotracGreen else CryotracDim)
+    ) {
+        Text(if (on) "OFF" else "ON", fontFamily = FontFamily.Monospace,
+            fontSize = 16.sp, letterSpacing = 2.sp)
+    }
+}
+
 // ── Questions panel ───────────────────────────────────────────────────────────
 @Composable
-fun QuestionsPanel(question: String, onNext: () -> Unit, onSpeak: () -> Unit) {
+fun QuestionsPanel(
+    question: String,
+    onNext: () -> Unit,
+    onSpeak: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .border(1.dp, CryotracGreen, RoundedCornerShape(2.dp))
-            .padding(8.dp),
+            .padding(6.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text("SAMPLE INVESTIGATIVE QUESTIONS", fontFamily = FontFamily.Monospace,
-            fontSize = 12.sp, color = CryotracMid, letterSpacing = 3.sp)
-        Text(question, fontFamily = FontFamily.Monospace, fontSize = 14.sp,
-            color = CryotracGreen, lineHeight = 20.sp, letterSpacing = 1.sp,
-            modifier = Modifier.defaultMinSize(minHeight = 56.dp))
+        Text("INVESTIGATIVE QUESTIONS", fontFamily = FontFamily.Monospace,
+            fontSize = 11.sp, color = CryotracMid, letterSpacing = 2.sp)
+        Text(question, fontFamily = FontFamily.Monospace, fontSize = 13.sp,
+            color = CryotracGreen, lineHeight = 18.sp, letterSpacing = 1.sp,
+            modifier = Modifier.weight(1f))
         Button(
-            onClick = onSpeak, modifier = Modifier.fillMaxWidth(),
+            onClick = onSpeak,
+            modifier = Modifier.fillMaxWidth().height(38.dp),
+            contentPadding = PaddingValues(0.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent, contentColor = CryotracGreen),
             border = androidx.compose.foundation.BorderStroke(1.dp, CryotracDim)
         ) {
             Text("▶   READ ALOUD", fontFamily = FontFamily.Monospace,
-                fontSize = 16.sp, letterSpacing = 3.sp)
+                fontSize = 14.sp, letterSpacing = 3.sp)
         }
         Button(
-            onClick = onNext, modifier = Modifier.fillMaxWidth(),
+            onClick = onNext,
+            modifier = Modifier.fillMaxWidth().height(38.dp),
+            contentPadding = PaddingValues(0.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent, contentColor = CryotracDim),
             border = androidx.compose.foundation.BorderStroke(1.dp, CryotracDim)
         ) {
             Text("NEXT QUESTION", fontFamily = FontFamily.Monospace,
-                fontSize = 16.sp, letterSpacing = 3.sp)
+                fontSize = 14.sp, letterSpacing = 3.sp)
         }
     }
 }
