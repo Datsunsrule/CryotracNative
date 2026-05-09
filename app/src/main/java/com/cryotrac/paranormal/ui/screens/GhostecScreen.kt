@@ -246,12 +246,12 @@ fun GhostecScreen(vm: CryotracViewModel) {
         HorizontalDivider(color = CryotracDim)
         Spacer(Modifier.height(6.dp))
 
-        // ── Questions (fixed smaller height) ──────────────────────────────────
+        // ── Questions ─────────────────────────────────────────────────────────
         QuestionsPanel(
             question = question,
             onNext   = { vm.showNextQuestion() },
             onSpeak  = { vm.speakCurrentQuestion() },
-            modifier = Modifier.height(148.dp)
+            modifier = Modifier.height(195.dp)
         )
 
         Text(

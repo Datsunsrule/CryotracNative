@@ -41,6 +41,7 @@ fun ScannerScreen(vm: CryotracViewModel) {
     val emfOn       by vm.emfOn.collectAsState()
     val emfAnomalies by vm.emfAnomalyCount.collectAsState()
     val emfLive     by vm.emfLive.collectAsState()
+    val emfBaseline by vm.emfBaseline.collectAsState()
     val question    by vm.currentQuestion.collectAsState()
 
     Column(
@@ -153,22 +154,51 @@ fun ScannerScreen(vm: CryotracViewModel) {
                 fontSize = 13.sp, letterSpacing = 2.sp)
         }
 
-        Text(
-            text = if (emfLive) "● LIVE" else "⚠ SIMULATED",
-            fontFamily = FontFamily.Monospace, fontSize = 10.sp,
-            color = if (emfLive) CryotracMid else CryotracDim,
-            letterSpacing = 1.sp, textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp)
-        )
-
         HorizontalDivider(color = CryotracDim, modifier = Modifier.padding(vertical = 2.dp))
 
-        // ── Questions — fills all remaining space ─────────────────────────────
+        // ── Field Readings ────────────────────────────────────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, CryotracDim, RoundedCornerShape(2.dp))
+                .padding(horizontal = 10.dp, vertical = 6.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("FIELD READINGS", fontFamily = FontFamily.Monospace,
+                    fontSize = 10.sp, color = CryotracDim, letterSpacing = 2.sp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    ReadingCell(
+                        label = "EMF BASELINE",
+                        value = if (emfBaseline != null) "${"%.1f".format(emfBaseline)} μT" else "---"
+                    )
+                    ReadingCell(
+                        label = "TOUCH EVENTS",
+                        value = touchCount.toString().padStart(3, '0')
+                    )
+                    ReadingCell(
+                        label = "EMF ANOMALIES",
+                        value = emfAnomalies.toString().padStart(3, '0')
+                    )
+                    ReadingCell(
+                        label = "SENSOR",
+                        value = if (emfLive) "LIVE" else "SIM",
+                        valueColor = if (emfLive) CryotracGreen else CryotracDim
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(4.dp))
+
+        // ── Questions ─────────────────────────────────────────────────────────
         QuestionsPanel(
             question = question,
             onNext   = { vm.showNextQuestion() },
             onSpeak  = { vm.speakCurrentQuestion() },
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.height(110.dp)
         )
 
         Spacer(Modifier.height(2.dp))
@@ -318,6 +348,17 @@ fun ToggleButton(on: Boolean, onClick: () -> Unit) {
     ) {
         Text(if (on) "OFF" else "ON", fontFamily = FontFamily.Monospace,
             fontSize = 16.sp, letterSpacing = 2.sp)
+    }
+}
+
+// ── Reading cell (label + value) ─────────────────────────────────────────────
+@Composable
+fun ReadingCell(label: String, value: String, valueColor: Color = CryotracGreen) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, fontFamily = FontFamily.Monospace, fontSize = 15.sp,
+            color = valueColor, letterSpacing = 1.sp)
+        Text(label, fontFamily = FontFamily.Monospace, fontSize = 8.sp,
+            color = CryotracDim, letterSpacing = 1.sp)
     }
 }
 
