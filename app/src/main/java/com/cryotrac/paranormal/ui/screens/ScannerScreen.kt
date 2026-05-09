@@ -198,7 +198,7 @@ fun ScannerScreen(vm: CryotracViewModel) {
             question = question,
             onNext   = { vm.showNextQuestion() },
             onSpeak  = { vm.speakCurrentQuestion() },
-            modifier = Modifier.height(110.dp)
+            modifier = Modifier.height(158.dp)
         )
 
         Spacer(Modifier.height(2.dp))
@@ -384,7 +384,7 @@ fun QuestionsPanel(
             modifier = Modifier.weight(1f))
         Button(
             onClick = onSpeak,
-            modifier = Modifier.fillMaxWidth().height(38.dp),
+            modifier = Modifier.fillMaxWidth().height(32.dp),
             contentPadding = PaddingValues(0.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent, contentColor = CryotracGreen),
@@ -395,7 +395,7 @@ fun QuestionsPanel(
         }
         Button(
             onClick = onNext,
-            modifier = Modifier.fillMaxWidth().height(38.dp),
+            modifier = Modifier.fillMaxWidth().height(32.dp),
             contentPadding = PaddingValues(0.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent, contentColor = CryotracDim),
