@@ -6,7 +6,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -54,7 +53,7 @@ fun ScannerScreen(vm: CryotracViewModel) {
         Spacer(Modifier.height(4.dp))
 
         // ── CH-01 Touch Sensor ────────────────────────────────────────────────
-        PanelHeader(ch = "CH-01", title = "SCREEN TOUCH SENSOR") {
+        PanelHeader(ch = "CH-01", title = "TOUCH SENSOR") {
             Button(
                 onClick = { vm.toggleCh01() },
                 modifier = Modifier.height(36.dp).widthIn(min = 72.dp),
@@ -131,8 +130,9 @@ fun ScannerScreen(vm: CryotracViewModel) {
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("NUMBER OF TOUCHES THIS SESSION", fontFamily = FontFamily.Monospace,
-                fontSize = 12.sp, color = CryotracMid, letterSpacing = 2.sp)
+            Text("TOUCHES THIS SESSION", fontFamily = FontFamily.Monospace,
+                fontSize = 12.sp, color = CryotracMid, letterSpacing = 2.sp,
+                modifier = Modifier.weight(1f))
             Text(touchCount.toString(), fontFamily = FontFamily.Monospace,
                 fontSize = 22.sp, color = CryotracGreen)
         }
@@ -186,7 +186,7 @@ fun ScannerScreen(vm: CryotracViewModel) {
             )
             Text(
                 text = if (emfMag > 0) "${"%.1f".format(emfMag)} μT" else "--.- μT",
-                fontFamily = FontFamily.Monospace, fontSize = 32.sp,
+                fontFamily = FontFamily.Monospace, fontSize = 22.sp,
                 color = emfColor, letterSpacing = 2.sp
             )
         }
@@ -225,8 +225,9 @@ fun ScannerScreen(vm: CryotracViewModel) {
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("NUMBER OF EMF ANOMALIES THIS SESSION", fontFamily = FontFamily.Monospace,
-                fontSize = 12.sp, color = CryotracMid, letterSpacing = 2.sp)
+            Text("EMF ANOMALIES", fontFamily = FontFamily.Monospace,
+                fontSize = 12.sp, color = CryotracMid, letterSpacing = 2.sp,
+                modifier = Modifier.weight(1f))
             Text(emfAnomalies.toString(), fontFamily = FontFamily.Monospace,
                 fontSize = 22.sp, color = CryotracGreen)
         }
@@ -354,11 +355,12 @@ fun PanelHeader(ch: String, title: String, trailing: @Composable () -> Unit = {}
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row {
-            Text(ch, fontFamily = FontFamily.Monospace, fontSize = 17.sp,
-                color = CryotracGreen, letterSpacing = 3.sp)
-            Text("  $title", fontFamily = FontFamily.Monospace, fontSize = 17.sp,
-                color = CryotracMid, letterSpacing = 3.sp)
+        Row(modifier = Modifier.weight(1f)) {
+            Text(ch, fontFamily = FontFamily.Monospace, fontSize = 15.sp,
+                color = CryotracGreen, letterSpacing = 2.sp)
+            Text("  $title", fontFamily = FontFamily.Monospace, fontSize = 15.sp,
+                color = CryotracMid, letterSpacing = 2.sp,
+                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         }
         trailing()
     }
