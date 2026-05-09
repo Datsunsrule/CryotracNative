@@ -26,37 +26,42 @@ fun InfoScreen() {
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         InfoSection(
-            heading = "⬡  CH-01 — SCREEN TOUCH SENSOR",
-            body = "Tap ON to activate. Touch the screen during an investigation. The needle and readout respond to the pressure and location of each touch. A spike in activity with no obvious cause may indicate a presence."
+            heading = "⬡  CH-01 — TOUCH SENSOR",
+            body = "Tap ON to activate. Touch the screen during an investigation. The analog needle and readout respond to the location of each touch. A spike in activity with no obvious cause may indicate a presence. Each touch is counted and logged in the Field Readings panel."
         )
         InfoDivider()
         InfoSection(
             heading = "⬡  CH-02 — EMF DETECTOR",
-            body = "Uses your phone's built-in magnetometer to detect real electromagnetic field fluctuations in microteslas (μT) — the same principle as a K-II meter used by professional investigators.\n\nColour coding: AMBIENT → ELEVATED → HIGH → ANOMALY\n\nTap CALIBRATE BASELINE on entering a new location. Any significant deviation triggers an ANOMALY alert with a voice notification."
+            body = "Uses your phone's built-in magnetometer to detect real electromagnetic field fluctuations in microteslas (μT) — the same principle as a K-II meter used by professional investigators.\n\nColour coding: AMBIENT → ELEVATED → HIGH → ANOMALY\n\nTap CALIBRATE BASELINE when entering a new location to set a reference point. Any significant deviation from baseline triggers an ANOMALY alert with a voice notification and increments the anomaly counter."
+        )
+        InfoDivider()
+        InfoSection(
+            heading = "⊞  FIELD READINGS",
+            body = "Displays live session data at a glance:\n\n• EMF BASELINE — the calibrated reference value in μT\n• TOUCH EVENTS — total screen touches this session\n• EMF ANOMALIES — number of anomaly triggers recorded\n• SENSOR — LIVE if the device has a magnetometer, SIM if using the simulation fallback"
         )
         InfoDivider()
         InfoSection(
             heading = "◈  GHOSTEC — WORD ENGINE",
-            body = "Tap INITIATE SEQUENCE to start. It cycles through 5,000 words drawn from a curated paranormal lexicon and speaks each aloud. Listen for words that feel relevant to your location. The engine stops automatically at the end of the sequence."
+            body = "Tap INITIATE SEQUENCE to begin. Ghostec cycles through 5,000 words drawn from a curated paranormal lexicon and speaks each aloud via text-to-speech.\n\nThe spectrum analyser visualises processing activity in real time. Recent words are displayed in a fading trail below the current word. The sequence counter and progress bar track completion.\n\nListen for words that feel relevant to your location or questions. Tap STOP SEQUENCE at any time to end early."
         )
         InfoDivider()
         InfoSection(
             heading = "?  INVESTIGATIVE QUESTIONS",
-            body = "Use these prompts to communicate during a session. Tap READ ALOUD to have the question spoken out loud. Tap NEXT QUESTION to cycle to the next prompt. Both pages show the same question."
+            body = "Prompts to guide communication during a session. Tap READ ALOUD to have the question spoken out loud via text-to-speech. Tap NEXT QUESTION to cycle to the next prompt from the pool. The same question is shown on both the Scanner and Word Engine pages."
         )
         InfoDivider()
         InfoSection(
             heading = "⊙  RETURN TO HOME",
-            body = "Tap the Cryotrac logo in the top-left at any time to return to the home screen."
+            body = "Tap the Ghostrac logo in the top-left at any time to return to the home screen. The session timer and counters continue running in the background."
         )
         InfoDivider()
         InfoSection(
             heading = "↺  SESSION RESET",
-            body = "Tap the reset button in the top-right to restart the session timer and clear all counters. Use this at the start of each new investigation location."
+            body = "Tap the reset button (↺) in the top-right to restart the session timer and clear all counters — touch events, EMF anomalies, and the EMF baseline. Use this at the start of each new investigation location."
         )
 
         Text(
-            text = "FOR ENTERTAINMENT PURPOSES ONLY",
+            text = "GHOSTRAC — FOR ENTERTAINMENT PURPOSES ONLY",
             fontFamily = FontFamily.Monospace, fontSize = 11.sp,
             color = CryotracDim, letterSpacing = 2.sp,
             textAlign = TextAlign.Center,

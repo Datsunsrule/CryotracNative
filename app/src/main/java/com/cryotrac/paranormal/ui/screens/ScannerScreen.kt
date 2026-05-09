@@ -198,7 +198,7 @@ fun ScannerScreen(vm: CryotracViewModel) {
             question = question,
             onNext   = { vm.showNextQuestion() },
             onSpeak  = { vm.speakCurrentQuestion() },
-            modifier = Modifier.height(158.dp)
+            modifier = Modifier.height(178.dp)
         )
 
         Spacer(Modifier.height(2.dp))
