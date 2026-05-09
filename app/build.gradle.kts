@@ -1,3 +1,6 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -18,7 +21,7 @@ android {
         vectorDrawables { useSupportLibrary = true }
 
         // Expose build metadata to BuildConfig for the version stamp
-        val buildDate = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(java.util.Date())
+        val buildDate = SimpleDateFormat("yyyy-MM-dd HH:mm").format(Date())
         buildConfigField("String", "BUILD_DATE", "\"$buildDate\"")
     }
 
