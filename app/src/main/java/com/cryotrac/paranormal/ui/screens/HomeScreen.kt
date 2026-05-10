@@ -15,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -128,7 +127,6 @@ fun HomeScreen(onEnter: () -> Unit) {
                     painter = painterResource(R.drawable.gemini_art),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
-                    colorFilter = ColorFilter.tint(CryotracYellow),
                     modifier = Modifier.height(72.dp)
                 )
             }
