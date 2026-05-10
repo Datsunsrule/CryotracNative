@@ -127,7 +127,7 @@ fun HomeScreen(onEnter: () -> Unit) {
                     painter = painterResource(R.drawable.gemini_art),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
-                    modifier = Modifier.height(144.dp)
+                    modifier = Modifier.height(72.dp)
                 )
             }
 
