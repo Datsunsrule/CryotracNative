@@ -109,34 +109,34 @@ fun HomeScreen(onEnter: () -> Unit) {
             }
         }
 
-        // Website
-        Text(
-            text = "GHOSTRAC.COM",
-            fontFamily    = FontFamily.Monospace,
-            fontSize      = 11.sp,
-            color         = CryotracDim,
-            textAlign     = TextAlign.Center,
-            letterSpacing = 3.sp,
-            modifier      = Modifier
+        // Website + Disclaimer stacked together
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 72.dp)
-        )
-
-        // Disclaimer
-        Text(
-            text = "FOR ENTERTAINMENT PURPOSES ONLY\n" +
-                   "EMF & TOUCH USE REAL DEVICE SENSORS\n" +
-                   "WORD ENGINE IS ALGORITHMICALLY GENERATED",
-            fontFamily    = FontFamily.Monospace,
-            fontSize      = 10.sp,
-            color         = CryotracDim,
-            textAlign     = TextAlign.Center,
-            letterSpacing = 1.sp,
-            lineHeight    = 17.sp,
-            modifier      = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 44.dp, start = 16.dp, end = 16.dp)
-        )
+                .padding(bottom = 36.dp, start = 16.dp, end = 16.dp)
+        ) {
+            Text(
+                text = "GHOSTRAC.COM",
+                fontFamily    = FontFamily.Monospace,
+                fontSize      = 11.sp,
+                color         = CryotracDim,
+                textAlign     = TextAlign.Center,
+                letterSpacing = 3.sp
+            )
+            Text(
+                text = "FOR ENTERTAINMENT PURPOSES ONLY\n" +
+                       "EMF & TOUCH USE REAL DEVICE SENSORS\n" +
+                       "WORD ENGINE IS ALGORITHMICALLY GENERATED",
+                fontFamily    = FontFamily.Monospace,
+                fontSize      = 10.sp,
+                color         = CryotracDim,
+                textAlign     = TextAlign.Center,
+                letterSpacing = 1.sp,
+                lineHeight    = 17.sp
+            )
+        }
 
         // ── Version stamp (bottom-right corner) ──────────────────────────────
         Text(
