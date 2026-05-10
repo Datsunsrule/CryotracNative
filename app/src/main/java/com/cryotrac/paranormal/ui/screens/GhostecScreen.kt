@@ -1,6 +1,7 @@
 package com.cryotrac.paranormal.ui.screens
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -9,15 +10,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cryotrac.paranormal.R
 import com.cryotrac.paranormal.ui.theme.*
 import com.cryotrac.paranormal.viewmodel.CryotracViewModel
 import kotlinx.coroutines.delay
@@ -64,10 +69,16 @@ fun GhostecScreen(vm: CryotracViewModel) {
         scanPos = 0f
     }
 
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        Image(
+            painter = painterResource(R.drawable.logofinal),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize().alpha(0.04f)
+        )
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
             .padding(horizontal = 10.dp)
     ) {
         Spacer(Modifier.height(4.dp))
@@ -262,4 +273,5 @@ fun GhostecScreen(vm: CryotracViewModel) {
             modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
         )
     }
+    } // end Box
 }
