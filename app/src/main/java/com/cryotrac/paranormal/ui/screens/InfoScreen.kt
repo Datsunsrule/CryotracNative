@@ -61,11 +61,18 @@ fun InfoScreen() {
         )
 
         Text(
-            text = "GHOSTRAC — FOR ENTERTAINMENT PURPOSES ONLY",
+            text = "GHOSTRAC.COM",
+            fontFamily = FontFamily.Monospace, fontSize = 12.sp,
+            color = CryotracMid, letterSpacing = 3.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 4.dp)
+        )
+        Text(
+            text = "FOR ENTERTAINMENT PURPOSES ONLY",
             fontFamily = FontFamily.Monospace, fontSize = 11.sp,
             color = CryotracDim, letterSpacing = 2.sp,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp)
+            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)
         )
     }
 }

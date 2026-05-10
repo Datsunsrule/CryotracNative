@@ -109,6 +109,19 @@ fun HomeScreen(onEnter: () -> Unit) {
             }
         }
 
+        // Website
+        Text(
+            text = "GHOSTRAC.COM",
+            fontFamily    = FontFamily.Monospace,
+            fontSize      = 11.sp,
+            color         = CryotracDim,
+            textAlign     = TextAlign.Center,
+            letterSpacing = 3.sp,
+            modifier      = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 72.dp)
+        )
+
         // Disclaimer
         Text(
             text = "FOR ENTERTAINMENT PURPOSES ONLY\n" +
