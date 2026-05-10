@@ -161,16 +161,21 @@ fun ScannerScreen(vm: CryotracViewModel) {
                 }
             }
 
+            val calibrated = emfBaseline != null
             Button(
                 onClick = { vm.calibrateEmf() },
                 modifier = Modifier.fillMaxWidth().height(36.dp),
                 contentPadding = PaddingValues(0.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent, contentColor = CryotracDim),
-                border = androidx.compose.foundation.BorderStroke(1.dp, CryotracDim)
+                    containerColor = if (calibrated) CryotracGreen.copy(alpha = 0.08f) else Color.Transparent,
+                    contentColor   = if (calibrated) CryotracGreen else CryotracDim),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp, if (calibrated) CryotracGreen else CryotracDim)
             ) {
-                Text("◎  CALIBRATE BASELINE", fontFamily = FontFamily.Monospace,
-                    fontSize = 13.sp, letterSpacing = 2.sp)
+                Text(
+                    if (calibrated) "✓  CALIBRATED" else "◎  CALIBRATE BASELINE",
+                    fontFamily = FontFamily.Monospace, fontSize = 13.sp, letterSpacing = 2.sp
+                )
             }
 
             HorizontalDivider(color = CryotracDim, modifier = Modifier.padding(vertical = 2.dp))

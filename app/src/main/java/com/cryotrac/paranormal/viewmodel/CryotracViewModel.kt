@@ -156,6 +156,8 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
             _emfStatus.value = "OFFLINE"
             _emfMag.value = 0f
             _emfX.value = 0f; _emfY.value = 0f; _emfZ.value = 0f
+            _emfBaseline.value = null
+            emfBaselineReads.clear()
             emfSimJob?.cancel()
             sensorManager.unregisterListener(this)
         } else {
