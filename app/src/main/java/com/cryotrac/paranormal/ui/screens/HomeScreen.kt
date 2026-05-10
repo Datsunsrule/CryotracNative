@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -117,6 +118,21 @@ fun HomeScreen(onEnter: () -> Unit) {
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 36.dp, start = 16.dp, end = 16.dp)
         ) {
+            // Gemini art — yellow tint on dark background
+            Box(
+                modifier = Modifier
+                    .background(Color.Black)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.gemini_art),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    colorFilter = ColorFilter.tint(CryotracYellow),
+                    modifier = Modifier.height(72.dp)
+                )
+            }
+
             Text(
                 text = "GHOSTRAC.COM",
                 fontFamily    = FontFamily.Monospace,
