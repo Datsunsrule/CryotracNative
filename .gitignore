@@ -9,3 +9,4 @@
 .cxx
 *.jks
 *.keystore
+!ghostrac-release.jks

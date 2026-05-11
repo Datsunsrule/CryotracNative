@@ -30,13 +30,6 @@ jobs:
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
 
-      - name: Decode keystore
-        env:
-          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
-        run: |
-          echo "$KEYSTORE_B64" | tr -d '[:space:]' | base64 --decode > app/ghostrac-release.jks
-          ls -la app/ghostrac-release.jks
-
       - name: Build signed release AAB
         run: ./gradlew bundleRelease --no-daemon --stacktrace
         env:
