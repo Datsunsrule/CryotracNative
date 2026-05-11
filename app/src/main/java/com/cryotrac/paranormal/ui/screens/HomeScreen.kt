@@ -15,6 +15,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -111,7 +113,8 @@ fun HomeScreen(onEnter: () -> Unit) {
                 modifier = Modifier
                     .height(52.dp)
                     .widthIn(min = 180.dp)
-                    .border(1.dp, CryotracGreen.copy(alpha = borderAlpha), RoundedCornerShape(4.dp)),
+                    .border(1.dp, CryotracGreen.copy(alpha = borderAlpha), RoundedCornerShape(4.dp))
+                    .semantics { contentDescription = "Enter Ghostrac" },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent,
                     contentColor   = CryotracGreen
@@ -145,7 +148,7 @@ fun HomeScreen(onEnter: () -> Unit) {
             ) {
                 Image(
                     painter = painterResource(R.drawable.gemini_art),
-                    contentDescription = null,
+                    contentDescription = "Ghostrac Wave logo",
                     contentScale = ContentScale.Fit,
                     colorFilter = ColorFilter.tint(CryotracGreen),
                     modifier = Modifier.height(76.dp)
@@ -165,11 +168,11 @@ fun HomeScreen(onEnter: () -> Unit) {
                        "EMF & TOUCH USE REAL DEVICE SENSORS\n" +
                        "WORD ENGINE IS ALGORITHMICALLY GENERATED",
                 fontFamily    = FontFamily.Monospace,
-                fontSize      = 10.sp,
+                fontSize      = 12.sp,
                 color         = CryotracDim,
                 textAlign     = TextAlign.Center,
                 letterSpacing = 1.sp,
-                lineHeight    = 17.sp
+                lineHeight    = 18.sp
             )
         }
 

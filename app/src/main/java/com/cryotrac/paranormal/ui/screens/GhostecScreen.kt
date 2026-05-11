@@ -20,6 +20,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cryotrac.paranormal.R
@@ -105,7 +107,7 @@ fun GhostecScreen(vm: CryotracViewModel) {
             Column(horizontalAlignment = Alignment.End) {
                 Text(counter, fontFamily = FontFamily.Monospace, fontSize = 13.sp,
                     color = CryotracMid, letterSpacing = 2.sp)
-                Text("WORDS PROC.", fontFamily = FontFamily.Monospace, fontSize = 9.sp,
+                Text("WORDS PROC.", fontFamily = FontFamily.Monospace, fontSize = 11.sp,
                     color = CryotracDim, letterSpacing = 1.sp)
             }
         }
@@ -237,7 +239,8 @@ fun GhostecScreen(vm: CryotracViewModel) {
         // ── Start / Stop ──────────────────────────────────────────────────────
         Button(
             onClick = { vm.toggleGhostec() },
-            modifier = Modifier.fillMaxWidth().height(52.dp),
+            modifier = Modifier.fillMaxWidth().height(52.dp)
+                .semantics { contentDescription = if (running) "Stop word sequence" else "Start word sequence" },
             contentPadding = PaddingValues(0.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (running) CryotracGreen.copy(alpha = 0.12f) else Color.Transparent,

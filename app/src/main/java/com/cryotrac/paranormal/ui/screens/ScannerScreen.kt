@@ -10,6 +10,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -176,7 +178,8 @@ fun ScannerScreen(vm: CryotracViewModel) {
             val calibrated = emfBaseline != null
             Button(
                 onClick = { vm.calibrateEmf() },
-                modifier = Modifier.fillMaxWidth().height(36.dp),
+                modifier = Modifier.fillMaxWidth().height(36.dp)
+                    .semantics { contentDescription = if (calibrated) "EMF calibrated" else "Calibrate EMF baseline" },
                 contentPadding = PaddingValues(0.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (calibrated) CryotracGreen.copy(alpha = 0.08f) else Color.Transparent,
@@ -201,7 +204,7 @@ fun ScannerScreen(vm: CryotracViewModel) {
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("FIELD READINGS", fontFamily = FontFamily.Monospace,
-                        fontSize = 10.sp, color = CryotracDim, letterSpacing = 2.sp)
+                        fontSize = 11.sp, color = CryotracDim, letterSpacing = 2.sp)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceAround
@@ -366,7 +369,8 @@ fun PanelHeader(ch: String, title: String, trailing: @Composable () -> Unit = {}
 fun ToggleButton(on: Boolean, onClick: () -> Unit) {
     Button(
         onClick = onClick,
-        modifier = Modifier.height(36.dp).widthIn(min = 72.dp),
+        modifier = Modifier.height(36.dp).widthIn(min = 72.dp)
+            .semantics { contentDescription = if (on) "Turn off" else "Turn on" },
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = if (on) CryotracGreen.copy(alpha = 0.15f) else Color.Transparent,
@@ -385,7 +389,7 @@ fun ReadingCell(label: String, value: String, valueColor: Color = CryotracGreen)
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(value, fontFamily = FontFamily.Monospace, fontSize = 15.sp,
             color = valueColor, letterSpacing = 1.sp)
-        Text(label, fontFamily = FontFamily.Monospace, fontSize = 8.sp,
+        Text(label, fontFamily = FontFamily.Monospace, fontSize = 11.sp,
             color = CryotracDim, letterSpacing = 1.sp)
     }
 }
