@@ -11,6 +11,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -45,6 +47,22 @@ fun HomeScreen(onEnter: () -> Unit) {
         }
     }
     DisposableEffect(Unit) { onDispose { player.release() } }
+
+    val scope = rememberCoroutineScope()
+
+    fun enterWithFade() {
+        scope.launch {
+            val steps = 20
+            val stepMs = 1000L / steps
+            val startVol = player.volume
+            for (i in 1..steps) {
+                player.volume = startVol * (1f - i.toFloat() / steps)
+                delay(stepMs)
+            }
+            player.volume = 0f
+            onEnter()
+        }
+    }
 
     // Animations
     val infinite = rememberInfiniteTransition(label = "home")
@@ -89,7 +107,7 @@ fun HomeScreen(onEnter: () -> Unit) {
             Spacer(Modifier.height(36.dp))
 
             Button(
-                onClick = onEnter,
+                onClick = { enterWithFade() },
                 modifier = Modifier
                     .height(52.dp)
                     .widthIn(min = 180.dp)
