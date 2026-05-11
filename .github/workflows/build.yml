@@ -1,4 +1,4 @@
-name: Build Debug APK
+name: Build & Release
 
 on:
   push:
@@ -30,17 +30,36 @@ jobs:
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
 
-      - name: Build debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_B64 }}" | base64 --decode > app/ghostrac-release.jks
 
-      - name: Upload APK artifact
+      - name: Build signed release AAB
+        run: ./gradlew bundleRelease --no-daemon --stacktrace
+        env:
+          KEYSTORE_PATH: ghostrac-release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ghostrac
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Build debug APK (for sideloading)
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghostrac-release-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: ghostrac-native-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
 
-      - name: Publish APK as latest release
+      - name: Publish debug APK as latest release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest-debug
