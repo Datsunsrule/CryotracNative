@@ -1,9 +1,22 @@
 package com.cryotrac.paranormal.ui.screens
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.core.content.ContextCompat
+import kotlin.math.roundToInt
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -39,6 +52,38 @@ fun GhostecScreen(vm: CryotracViewModel) {
     val counter     by vm.ghostecCounter.collectAsState()
     val question    by vm.currentQuestion.collectAsState()
     val recentWords by vm.recentWords.collectAsState()
+    val sweepMs     by vm.sweepMs.collectAsState()
+    val pitchDrift  by vm.pitchDrift.collectAsState()
+    val staticOn    by vm.staticOn.collectAsState()
+    val recording   by vm.recording.collectAsState()
+    val recTime     by vm.recTime.collectAsState()
+    val recMessage  by vm.recMessage.collectAsState()
+    val marks       by vm.marks.collectAsState()
+
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+
+    // ── Recording needs the microphone permission, asked on first use ─────────
+    val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) vm.startRecording() else vm.onMicDenied()
+    }
+    fun toggleRecording() {
+        when {
+            recording -> vm.stopRecording()
+            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED -> vm.startRecording()
+            else -> micPermission.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    fun shareMarks() {
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "Ghostrac session marks")
+            putExtra(Intent.EXTRA_TEXT, vm.marksLog())
+        }
+        context.startActivity(Intent.createChooser(send, "Share marks"))
+    }
 
     // ── Waveform bar state ────────────────────────────────────────────────────
     val barCount = 28
@@ -239,7 +284,7 @@ fun GhostecScreen(vm: CryotracViewModel) {
         // ── Start / Stop ──────────────────────────────────────────────────────
         Button(
             onClick = { vm.toggleGhostec() },
-            modifier = Modifier.fillMaxWidth().height(52.dp)
+            modifier = Modifier.fillMaxWidth().height(48.dp)
                 .semantics { contentDescription = if (running) "Stop word sequence" else "Start word sequence" },
             contentPadding = PaddingValues(0.dp),
             colors = ButtonDefaults.buttonColors(
@@ -256,7 +301,91 @@ fun GhostecScreen(vm: CryotracViewModel) {
             )
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(6.dp))
+
+        // ── Session controls: record / mark / static ──────────────────────────
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            ControlButton(
+                label       = if (recording) "■ $recTime" else "● REC",
+                active      = recording,
+                activeColor = CryotracRed,
+                description = if (recording) "Stop recording" else "Start recording",
+                onClick     = { toggleRecording() },
+                modifier    = Modifier.weight(1f)
+            )
+            ControlButton(
+                label       = "◆ MARK",
+                active      = false,
+                description = "Mark this moment",
+                onClick     = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    vm.addMark()
+                },
+                modifier    = Modifier.weight(1f)
+            )
+            ControlButton(
+                label       = "≈ STATIC",
+                active      = staticOn,
+                description = if (staticOn) "Turn static off" else "Turn static on",
+                onClick     = { vm.toggleStatic() },
+                modifier    = Modifier.weight(1f)
+            )
+        }
+
+        // ── Sweep speed + pitch drift ─────────────────────────────────────────
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            SliderControl(
+                label    = "SWEEP",
+                value    = "${sweepMs}MS",
+                position = sweepMs.toFloat(),
+                range    = 50f..350f,
+                onChange = { vm.setSweepMs(it) },
+                modifier = Modifier.weight(1f)
+            )
+            SliderControl(
+                label    = "PITCH DRIFT",
+                value    = "${(pitchDrift * 100).roundToInt()}%",
+                position = pitchDrift,
+                range    = 0f..1f,
+                onChange = { vm.setPitchDrift(it) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        // ── Recording status + latest mark ────────────────────────────────────
+        recMessage?.let {
+            Text(it, fontFamily = FontFamily.Monospace, fontSize = 10.sp,
+                color = CryotracMid, letterSpacing = 1.sp,
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        if (marks.isNotEmpty()) {
+            val last = marks.last()
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "◆ ${marks.size} · #${last.number} ${last.sessionTime}" +
+                           if (last.words.isNotEmpty()) "  ${last.words.joinToString(" · ")}" else "",
+                    fontFamily = FontFamily.Monospace, fontSize = 11.sp,
+                    color = CryotracGreen, letterSpacing = 1.sp,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    "SHARE", fontFamily = FontFamily.Monospace, fontSize = 12.sp,
+                    color = CryotracGreen, letterSpacing = 2.sp,
+                    modifier = Modifier
+                        .clickable { shareMarks() }
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(4.dp))
         HorizontalDivider(color = CryotracDim)
         Spacer(Modifier.height(6.dp))
 
@@ -265,7 +394,7 @@ fun GhostecScreen(vm: CryotracViewModel) {
             question = question,
             onNext   = { vm.showNextQuestion() },
             onSpeak  = { vm.speakCurrentQuestion() },
-            modifier = Modifier.height(195.dp)
+            modifier = Modifier.height(160.dp)
         )
 
         Text(
@@ -277,4 +406,60 @@ fun GhostecScreen(vm: CryotracViewModel) {
         )
     }
     } // end Box
+}
+
+// ── Session control button (REC / MARK / STATIC) ─────────────────────────────
+@Composable
+private fun ControlButton(
+    label: String,
+    active: Boolean,
+    description: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    activeColor: Color = CryotracGreen
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(40.dp).semantics { contentDescription = description },
+        contentPadding = PaddingValues(0.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (active) activeColor.copy(alpha = 0.15f) else Color.Transparent,
+            contentColor   = if (active) activeColor else CryotracMid
+        ),
+        border = BorderStroke(1.dp, if (active) activeColor else CryotracDim)
+    ) {
+        Text(label, fontFamily = FontFamily.Monospace, fontSize = 13.sp,
+            letterSpacing = 2.sp, maxLines = 1)
+    }
+}
+
+// ── Labelled slider ──────────────────────────────────────────────────────────
+@Composable
+private fun SliderControl(
+    label: String,
+    value: String,
+    position: Float,
+    range: ClosedFloatingPointRange<Float>,
+    onChange: (Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label, fontFamily = FontFamily.Monospace, fontSize = 10.sp,
+                color = CryotracDim, letterSpacing = 1.sp)
+            Text(value, fontFamily = FontFamily.Monospace, fontSize = 10.sp,
+                color = CryotracGreen, letterSpacing = 1.sp)
+        }
+        Slider(
+            value = position,
+            onValueChange = onChange,
+            valueRange = range,
+            modifier = Modifier.semantics { contentDescription = label },
+            colors = SliderDefaults.colors(
+                thumbColor         = CryotracGreen,
+                activeTrackColor   = CryotracGreen,
+                inactiveTrackColor = CryotracDim.copy(alpha = 0.4f)
+            )
+        )
+    }
 }

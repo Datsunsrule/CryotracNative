@@ -53,7 +53,17 @@ fun InfoScreen() {
         InfoDivider()
         InfoSection(
             heading = "◈  GHOSTEC — WORD ENGINE",
-            body = "Tap INITIATE SEQUENCE to begin. Ghostec cycles through 5,000 words drawn from a curated paranormal lexicon and speaks each aloud via text-to-speech.\n\nThe spectrum analyser visualises processing activity in real time. Recent words are displayed in a fading trail below the current word. The sequence counter and progress bar track completion.\n\nListen for words that feel relevant to your location or questions. Tap STOP SEQUENCE at any time to end early."
+            body = "Tap INITIATE SEQUENCE to begin. Ghostec cycles through 5,000 words drawn from a curated paranormal lexicon and speaks each aloud via text-to-speech.\n\nThe spectrum analyser visualises processing activity in real time. Recent words are displayed in a fading trail below the current word. The sequence counter and progress bar track completion.\n\nListen for words that feel relevant to your location or questions. Tap STOP SEQUENCE at any time to end early.\n\nWords deliberately cut into one another, like a spirit box sweep — fragments can blend into words that were never spoken."
+        )
+        InfoDivider()
+        InfoSection(
+            heading = "◈  SWEEP CONTROLS",
+            body = "• SWEEP — time between words, 50–350 ms. Faster sweeps chop words into shorter fragments.\n• PITCH DRIFT — how much each word's pitch wanders. 0% is a steady voice.\n• STATIC — radio-style static under the sweep while the sequence runs."
+        )
+        InfoDivider()
+        InfoSection(
+            heading = "●  RECORD & MARK",
+            body = "Tap REC to record the session through the microphone — room sound plus the sweep itself. Tap again to stop. Recordings are saved to Recordings/Ghostrac on your phone (Music/Ghostrac on older Android versions).\n\nTap MARK the moment you hear something. Each mark stores the session time, the recording time if you are recording, and the last few words of the sweep. Tap SHARE to send the full list of marks. Marks clear on session reset."
         )
         InfoDivider()
         InfoSection(

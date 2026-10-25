@@ -8,9 +8,12 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.media.AudioAttributes
 import android.media.SoundPool
+import android.os.SystemClock
 import android.speech.tts.TextToSpeech
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.cryotrac.paranormal.audio.SessionRecorder
+import com.cryotrac.paranormal.audio.StaticNoise
 import com.cryotrac.paranormal.data.QUESTIONS
 import com.cryotrac.paranormal.data.buildWordBank
 import kotlinx.coroutines.*
@@ -18,7 +21,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
+import kotlin.random.Random
+
+/** A moment the investigator flagged, with the words that were sweeping at the time. */
+data class Mark(val number: Int, val sessionTime: String, val recTime: String?, val words: List<String>)
 
 class CryotracViewModel(application: Application) : AndroidViewModel(application), SensorEventListener {
 
@@ -71,6 +79,30 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
     val recentWords: StateFlow<List<String>> = _recentWords
     private var ghostecJob: Job? = null
 
+    // Sweep controls: delay between words, and how far each word's pitch may wander (0..1)
+    private val _sweepMs = MutableStateFlow(150)
+    val sweepMs: StateFlow<Int> = _sweepMs
+    private val _pitchDrift = MutableStateFlow(0.3f)
+    val pitchDrift: StateFlow<Float> = _pitchDrift
+    private val _staticOn = MutableStateFlow(true)
+    val staticOn: StateFlow<Boolean> = _staticOn
+    private val staticNoise = StaticNoise()
+
+    // ── Session recording ─────────────────────────────────────────────────────
+    private val recorder = SessionRecorder(application)
+    private val _recording = MutableStateFlow(false)
+    val recording: StateFlow<Boolean> = _recording
+    private val _recTime = MutableStateFlow("00:00")
+    val recTime: StateFlow<String> = _recTime
+    private val _recMessage = MutableStateFlow<String?>(null)
+    val recMessage: StateFlow<String?> = _recMessage
+    private var recStartMs = 0L
+    private var recTimerJob: Job? = null
+
+    // ── Marks ─────────────────────────────────────────────────────────────────
+    private val _marks = MutableStateFlow<List<Mark>>(emptyList())
+    val marks: StateFlow<List<Mark>> = _marks
+
     // ── Questions ─────────────────────────────────────────────────────────────
     private val _currentQuestion = MutableStateFlow("")
     val currentQuestion: StateFlow<String> = _currentQuestion
@@ -113,16 +145,21 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             while (true) {
                 delay(1000)
-                val elapsed = (System.currentTimeMillis() - sessionStartMs) / 1000
-                val m = (elapsed / 60).toString().padStart(2, '0')
-                val s = (elapsed % 60).toString().padStart(2, '0')
-                _sessionTime.value = "$m:$s"
+                _sessionTime.value = formatElapsed(System.currentTimeMillis() - sessionStartMs)
             }
         }
     }
 
+    private fun formatElapsed(ms: Long): String {
+        val elapsed = ms / 1000
+        val m = (elapsed / 60).toString().padStart(2, '0')
+        val s = (elapsed % 60).toString().padStart(2, '0')
+        return "$m:$s"
+    }
+
     fun resetSession() {
         sessionStartMs = System.currentTimeMillis()
+        _marks.value = emptyList()
         _touchCount.value = 0
         _emfAnomalyCount.value = 0
         emfAlertCooldown = false
@@ -254,6 +291,7 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
         val bank = buildWordBank()
         _ghostecRunning.value = true
         _recentWords.value = emptyList()
+        if (_staticOn.value) staticNoise.start()
         ghostecJob = viewModelScope.launch {
             bank.forEachIndexed { i, word ->
                 if (!isActive) return@forEachIndexed
@@ -262,16 +300,75 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
                 _ghostecCounter.value = "${(i + 1).toString().padStart(4, '0')}/5000"
                 _ghostecProgress.value = (i + 1) / 5000f
                 _recentWords.value = (_recentWords.value + upper).takeLast(5)
-                speakText(word, rate = 1.1f)
-                delay(150)
+                // Each word gets a random pitch within ±50% × drift
+                val pitch = 1f + (Random.nextFloat() * 2f - 1f) * _pitchDrift.value * 0.5f
+                speakText(word, rate = 1.1f, pitch = pitch)
+                delay(_sweepMs.value.toLong())
             }
             _ghostecWord.value = "-- SEQUENCE COMPLETE --"
             _ghostecRunning.value = false
+            staticNoise.stop()
         }
     }
 
     fun stopGhostec() {
-        ghostecJob?.cancel(); _ghostecRunning.value = false; tts?.stop()
+        ghostecJob?.cancel(); _ghostecRunning.value = false; tts?.stop(); staticNoise.stop()
+    }
+
+    fun setSweepMs(ms: Float) { _sweepMs.value = (ms / 10f).roundToInt() * 10 }
+    fun setPitchDrift(drift: Float) { _pitchDrift.value = drift.coerceIn(0f, 1f) }
+
+    fun toggleStatic() {
+        _staticOn.value = !_staticOn.value
+        if (_staticOn.value && _ghostecRunning.value) staticNoise.start() else staticNoise.stop()
+    }
+
+    // ── Recording ─────────────────────────────────────────────────────────────
+    fun startRecording() {
+        if (_recording.value) return
+        if (!recorder.start()) { _recMessage.value = "MIC UNAVAILABLE"; return }
+        recStartMs = SystemClock.elapsedRealtime()
+        _recTime.value = "00:00"
+        _recording.value = true
+        _recMessage.value = null
+        recTimerJob = viewModelScope.launch {
+            while (true) {
+                _recTime.value = formatElapsed(SystemClock.elapsedRealtime() - recStartMs)
+                delay(500)
+            }
+        }
+    }
+
+    fun stopRecording() {
+        if (!_recording.value) return
+        recTimerJob?.cancel()
+        _recording.value = false
+        val captured = recorder.stop()
+        if (captured == null) { _recMessage.value = "RECORDING TOO SHORT"; return }
+        _recMessage.value = "SAVING…"
+        viewModelScope.launch {
+            val where = withContext(Dispatchers.IO) { recorder.publish(captured) }
+            _recMessage.value = "SAVED → $where"
+        }
+    }
+
+    fun onMicDenied() { _recMessage.value = "MICROPHONE PERMISSION DENIED" }
+
+    // ── Marks ─────────────────────────────────────────────────────────────────
+    fun addMark() {
+        val words = if (_ghostecRunning.value) _recentWords.value.takeLast(3) else emptyList()
+        val rec = if (_recording.value) _recTime.value else null
+        _marks.value = _marks.value + Mark(_marks.value.size + 1, _sessionTime.value, rec, words)
+    }
+
+    fun marksLog(): String = buildString {
+        appendLine("GHOSTRAC SESSION MARKS")
+        _marks.value.forEach { m ->
+            append("#${m.number}  SESSION ${m.sessionTime}")
+            m.recTime?.let { append("  REC $it") }
+            if (m.words.isNotEmpty()) append("  ${m.words.joinToString(" · ")}")
+            appendLine()
+        }
     }
 
     // ── Questions ─────────────────────────────────────────────────────────────
@@ -306,6 +403,9 @@ class CryotracViewModel(application: Application) : AndroidViewModel(application
         sensorManager.unregisterListener(this)
         emfSimJob?.cancel()
         ghostecJob?.cancel()
+        staticNoise.stop()
+        // Don't lose a recording that was still running when the app closed
+        recorder.stop()?.let { recorder.publish(it) }
         tts?.shutdown()
         soundPool.release()
     }
